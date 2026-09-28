@@ -74,7 +74,7 @@ export function treePage(root: string, report: Report, f: Focus, files: Record<s
         const url = `/t/${enc(doc)}/${g}/${r.checkId}`;
         tree += `<li${sel(f.doc === doc && f.checkId === r.checkId && f.n === undefined)}>${icon(r.status)} <a href="${url}">${h(r.checkId)}</a> <span class="n">${h(m(`scope.${r.scope}`))}${r.findings.length ? ` · ${h(m("ui.count", { n: r.findings.length }))}` : ""}</span>`;
         if (r.findings.length)
-          tree += `<ul>${r.findings.map((x, i) => `<li${sel(f.checkId === r.checkId && f.doc === doc && f.n === i)}><a href="${url}/${i}">${h(x.message.slice(0, 60))}</a></li>`).join("")}</ul>`;
+          tree += `<ul>${r.findings.map((x, i) => `<li${sel(f.checkId === r.checkId && f.doc === doc && f.n === i + 1)}><a href="${url}/${i + 1}">${h(x.message.slice(0, 60))}</a></li>`).join("")}</ul>`;
         tree += "</li>";
       }
       tree += "</ul></details></li>";
@@ -88,12 +88,12 @@ export function treePage(root: string, report: Report, f: Focus, files: Record<s
   const scoped = report.results.filter((r) => (!f.doc || r.doc === f.doc) && (!f.axis || r.axis === f.axis) && (!f.checkId || r.checkId === f.checkId));
   if (f.checkId && f.n !== undefined) {
     const r = scoped[0];
-    const x = r?.findings[f.n];
+    const x = r?.findings[f.n - 1];
     detail = x
       ? `<h3>${icon(r.status)} ${h(r.checkId)} #${f.n}</h3><div class="msg">${h(x.message)}</div><div class="n">${h(where(x))}</div>${excerpt(root, files[r.doc], x.loc.line)}`
       : `<p>${h(m("ui.not-found"))}</p>`;
   } else {
-    const bad = scoped.filter((r) => r.status !== "pass");
+    const bad = scoped.filter((r) => r.status === "fail" || r.status === "warn" || r.status === "unknown");
     detail = `<h3>${h([f.doc, f.axis, f.checkId].filter(Boolean).join(" / ") || m("ui.all"))}</h3>`;
     if (f.doc && files[f.doc]) detail += `<p><a href="/p/${enc(f.doc)}">${h(m("ui.preview-link"))}</a></p>`;
     detail += bad.length
@@ -101,7 +101,7 @@ export function treePage(root: string, report: Report, f: Focus, files: Record<s
           .map(
             (r) =>
               `<h4>${icon(r.status)} <a href="/t/${enc(r.doc)}/${r.axis}/${r.checkId}">${h(r.doc)} / ${h(r.checkId)}</a></h4>${r.note ? `<div class="n">${h(r.note)}</div>` : ""}` +
-              r.findings.map((x, i) => `<div class="msg"><a href="/t/${enc(r.doc)}/${r.axis}/${r.checkId}/${i}">${h(x.message)}</a> <span class="n">${h(where(x))}</span></div>`).join(""),
+              r.findings.map((x, i) => `<div class="msg"><a href="/t/${enc(r.doc)}/${r.axis}/${r.checkId}/${i + 1}">${h(x.message)}</a> <span class="n">${h(where(x))}</span></div>`).join(""),
           )
           .join("")
       : `<p>${h(m("ui.all-pass"))}</p>`;
