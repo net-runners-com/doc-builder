@@ -18,6 +18,8 @@ export interface Config {
   online: { timeoutMs: number; userAgent: string; blockedStatuses: number[] };
   probe: { timeoutMs: number };
   render: { d2Pad: number };
+  /** 表現の数値ルール。"*" が全種類の既定、種類ごとに上書き。style: desumasu | dearu | any */
+  expression: Record<string, { max_sentence_length?: number; max_commas?: number; max_actions_per_sentence?: number; style?: "desumasu" | "dearu" | "any" }>;
 }
 
 /** 既定値は src/defaults/runner.json、プロジェクトの runner.yaml で上書き（オブジェクトは 1 段マージ） */

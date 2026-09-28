@@ -36,5 +36,22 @@
   "render": {
     "d2Pad": 20
   },
-  "contrastMin": 4.5
+  "contrastMin": 4.5,
+  "expression": {
+    "*": {
+      "max_sentence_length": 120,
+      "max_commas": 4,
+      "style": "desumasu"
+    },
+    "terms": {
+      "style": "desumasu"
+    },
+    "procedure": {
+      "max_actions_per_sentence": 1,
+      "style": "dearu"
+    },
+    "proposal": {
+      "style": "desumasu"
+    }
+  }
 }

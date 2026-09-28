@@ -10,6 +10,7 @@
   "dependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "ajv": "^8.20.0",
+    "kuromojin": "^3.0.1",
     "vega": "^6.4.0",
     "vega-lite": "^6.4.3",
     "yaml": "^2.9.1"

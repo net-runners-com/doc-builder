@@ -14,7 +14,7 @@ export const MARKER = /⟦(img|fig|cap):([^⟧]+)⟧/g;
 const SKIP = new Set([
   "id", "kind", "theme", "path", "url", "accessed", "updated", "effective", "version",
   "date", "type", "chart", "x", "y", "data", "source", "table", "unit_price", "qty",
-  "verify", "capture",
+  "verify", "capture", "expect",
 ]);
 
 

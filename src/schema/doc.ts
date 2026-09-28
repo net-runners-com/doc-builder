@@ -18,6 +18,25 @@ const quote = {
 };
 const tableBlock = { type: "object", required: ["table"], additionalProperties: false, properties: { table: id } };
 const body = { anyOf: [str, { type: "array", items: { anyOf: [str, quote, tableBlock] } }] };
+const posInt = { type: "integer", minimum: 1 };
+export const expectSchema = {
+  type: "array",
+  items: {
+    type: "object",
+    minProperties: 1,
+    maxProperties: 1,
+    additionalProperties: false,
+    properties: {
+      contains_fact: id,
+      contains_ref: id,
+      contains: strs,
+      not_contains: strs,
+      max_sentence_length: posInt,
+      max_sentences: posInt,
+      max_actions_per_sentence: posInt,
+    },
+  },
+};
 
 const meta = (extra: string[]) => ({
   type: "object",
@@ -51,6 +70,7 @@ const meta = (extra: string[]) => ({
 const common = {
   kind: { enum: KINDS },
   facts: { type: "array", items: factSchema },
+  expect: expectSchema,
   theme: { anyOf: [str, { type: "object" }] },
   layout: { anyOf: [str, { type: "object" }] },
   wording: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
@@ -118,7 +138,7 @@ const common = {
 const section: any = {
   type: "object",
   required: ["id", "title", "body"],
-  properties: { id, title: str, body, children: { type: "array", items: { $ref: "#/$defs/section" } } },
+  properties: { id, title: str, body, expect: expectSchema, children: { type: "array", items: { $ref: "#/$defs/section" } } },
 };
 
 const kinds: Record<Kind, { required: string[]; metaExtra: string[]; props: Record<string, unknown> }> = {
@@ -130,7 +150,7 @@ const kinds: Record<Kind, { required: string[]; metaExtra: string[]; props: Reco
       articles: {
         type: "array",
         minItems: 1,
-        items: { type: "object", required: ["id", "title", "clauses"], properties: { id, title: str, clauses: { ...strs, minItems: 1 } } },
+        items: { type: "object", required: ["id", "title", "clauses"], properties: { id, title: str, clauses: { ...strs, minItems: 1 }, expect: expectSchema } },
       },
       supplement: str,
     },
@@ -152,6 +172,7 @@ const kinds: Record<Kind, { required: string[]; metaExtra: string[]; props: Reco
             title: str,
             actions: { ...strs, minItems: 1 },
             expected: str,
+            expect: expectSchema,
             requires: { type: "array", items: id },
             produces: { type: "array", items: id },
             next: id,

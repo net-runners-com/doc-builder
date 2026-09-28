@@ -167,5 +167,18 @@
   "check.flow.unmet": "{step} の前提 {states} が、たどり着く経路のどこかで満たされていません",
   "check.flow.bad-choice": "フロー「{flow}」: {step} に分岐「{choice}」がありません",
   "check.flow.scenario-loop": "フロー「{flow}」が終わりません: {path}",
-  "check.flow.wrong-end": "フロー「{flow}」の到達先が {got} です（期待 {want}）: {path}"
+  "check.flow.wrong-end": "フロー「{flow}」の到達先が {got} です（期待 {want}）: {path}",
+  "style.desumasu": "です・ます調",
+  "style.dearu": "だ・である調",
+  "check.expression.long": "一文が {n} 文字あります（上限 {max}）",
+  "check.expression.commas": "読点が {n} 個あります（上限 {max}）",
+  "check.expression.style": "{want}の文書に{got}の文があります",
+  "check.expression.actions": "一文に動作が {n} 個あります（上限 {max}）",
+  "check.expect.fact": "{block}: fact \"{id}\" を参照していません",
+  "check.expect.ref": "{block}: \"{id}\" を参照していません",
+  "check.expect.contains": "{block}: 「{word}」がありません",
+  "check.expect.not-contains": "{block}: 「{word}」を含んでいます",
+  "check.expect.sentences": "{block}: 文が {n} 個あります（上限 {max}）",
+  "check.expect.length": "{sentence}: 一文が {n} 文字あります（上限 {max}）",
+  "check.expect.actions": "{sentence}: 一文に動作が {n} 個あります（上限 {max}）"
 }
