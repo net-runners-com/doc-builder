@@ -1,0 +1,28 @@
+name: 正式文書
+extends: standard
+cover:
+  - row:
+      justify: space-between
+      children:
+        - company: { show: [name, address, tel] }
+        - confidential: { text: 社外秘 }
+  - spacer: 22%
+  - title: { size: 28pt }
+  - spacer: 8mm
+  - meta-table: { fields: [number, client, version, updated, owner] }
+  - spacer: fill
+  - row:
+      justify: end
+      children:
+        - approval: { roles: [承認, 確認, 作成] }
+front:
+  - toc: { depth: 2 }
+  - spacer: 10mm
+  - history
+  - pagebreak
+header:
+  - row:
+      justify: space-between
+      children:
+        - company-mini
+        - confidential: { text: 社外秘 }

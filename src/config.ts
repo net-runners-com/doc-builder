@@ -6,23 +6,26 @@ export interface Config {
   root: string;
   contentDir: string;
   defaultTheme: string;
-  review: { model: string };
+  defaultLayout: string;
+  defaultWording: string;
+  review: { model: string; timeoutMs: number; retries: number; imageWidth: number };
   sourceMaxAgeDays: number;
   port: number;
+  /** text/placeholder の正規表現 */
+  placeholders: string[];
+  online: { timeoutMs: number; userAgent: string; blockedStatuses: number[] };
+  probe: { timeoutMs: number };
+  render: { d2Pad: number };
 }
 
-const DEFAULTS = {
-  contentDir: "content",
-  defaultTheme: "default",
-  review: { model: "sonnet" },
-  sourceMaxAgeDays: 365,
-  port: 4600,
-};
-
+/** 既定値は src/defaults/runner.json、プロジェクトの runner.yaml で上書き（オブジェクトは 1 段マージ） */
 export function loadConfig(root: string): Config {
+  const defaults = JSON.parse(readFileSync(join(import.meta.dir, "defaults", "runner.json"), "utf8"));
   const p = join(root, "runner.yaml");
   const user = existsSync(p) ? (parse(readFileSync(p, "utf8")) ?? {}) : {};
-  return { ...DEFAULTS, ...user, root, review: { ...DEFAULTS.review, ...(user.review ?? {}) } };
+  const out: any = { ...defaults, root };
+  for (const [k, v] of Object.entries(user)) out[k] = v && typeof v === "object" && !Array.isArray(v) ? { ...defaults[k], ...v } : v;
+  return out;
 }
 
 export const cacheDir = (root: string) => join(root, ".test-runner", "cache");

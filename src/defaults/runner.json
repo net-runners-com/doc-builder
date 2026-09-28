@@ -1,0 +1,13 @@
+{
+  "contentDir": "content",
+  "defaultTheme": "default",
+  "defaultLayout": "standard",
+  "defaultWording": "default",
+  "review": { "model": "sonnet", "timeoutMs": 300000, "retries": 1, "imageWidth": 900 },
+  "sourceMaxAgeDays": 365,
+  "port": 4600,
+  "placeholders": ["\\bTBD\\b", "\\bTODO\\b", "\\bXXX\\b", "〇〇", "○○", "未定(?!義)"],
+  "online": { "timeoutMs": 10000, "userAgent": "doc-test-runner/0.1", "blockedStatuses": [401, 403, 407, 429, 503] },
+  "probe": { "timeoutMs": 30000 },
+  "render": { "d2Pad": 20 }
+}

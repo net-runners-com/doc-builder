@@ -1,0 +1,4 @@
+description: 改訂履歴（meta.history）
+regions: [front, back]
+needs: [meta.history]
+props: { type: "null" }

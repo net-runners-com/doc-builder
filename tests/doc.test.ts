@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { buildDoc } from "../src/parse/doc";
-import { MIN, NUM, meta } from "./helpers";
+import { MIN, meta } from "./helpers";
 
-const build = (src: string) => buildDoc("/tmp/dtr/x.yaml", src, NUM);
+const build = (src: string) => buildDoc("/tmp/dtr/x.yaml", src);
 const ids = (d: ReturnType<typeof build>) => d.buildErrors.map((e) => e.checkId);
 
 test("条・手順は連番で採番される", () => {

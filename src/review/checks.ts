@@ -5,7 +5,7 @@ import { Resvg } from "@resvg/resvg-js";
 import { parse } from "yaml";
 import { defineCheck, type Check, type CheckCtx } from "../checks/define";
 import { Skip, ToolMissing, Unknown } from "../errors";
-import { renderFigures } from "../render";
+import { renderFigures, renderOptions } from "../render";
 import type { Doc, Kind } from "../types";
 import { defaultClaude, parseReviewOutput, REVIEW_SCHEMA, type ReviewOutput } from "./claude";
 
@@ -22,26 +22,25 @@ export function loadAspects(root: string, kind: Kind): Aspect[] {
   return [...read("_common.yaml"), ...read(`${kind}.yaml`)];
 }
 
-export function buildPrompt(doc: Doc, a: Aspect, images: string[]): string {
+/** 指示文は reviews/_prompt.md（{{aspect}} {{images}} {{document}}）と reviews/_images.md（{{paths}}） */
+export function buildPrompt(root: string, doc: Doc, a: Aspect, images: string[]): string {
+  const read = (f: string) => readFileSync(join(root, "reviews", f), "utf8");
   const labels = Object.fromEntries(Object.entries(doc.defs).filter(([, d]) => d.label).map(([id, d]) => [id, d.label]));
-  return [
-    "あなたは文書レビュワーです。次の観点だけで文書を判定してください。",
-    `観点: ${a.ask}`,
-    "観点に照らして問題がなければ verdict=pass、問題があれば verdict=fail とし、findings に問題箇所のブロック ID（文書 JSON 内の id）と理由を日本語で書いてください。観点と無関係な指摘はしないでください。ファイルの変更はしないでください。",
-    ...(images.length ? [`図の画像: ${images.join(", ")}（Read で確認し、本文の説明と矛盾がないかも判定に含めてください）`] : []),
-    "",
-    "文書（JSON。labels は id → 本文上の表記）:",
-    JSON.stringify({ kind: doc.kind, labels, data: doc.data }, null, 2),
-  ].join("\n");
+  const fill = (tpl: string, vars: Record<string, string>) => tpl.replace(/\{\{(\w+)\}\}/g, (m, k) => vars[k] ?? m);
+  return fill(read("_prompt.md"), {
+    aspect: a.ask,
+    images: images.length ? fill(read("_images.md"), { paths: images.join(", ") }) : "",
+    document: JSON.stringify({ kind: doc.kind, labels, data: doc.data }, null, 2),
+  });
 }
 
 async function figurePngs(doc: Doc, ctx: CheckCtx): Promise<string[]> {
-  const { svgs } = await renderFigures(doc, ctx.cacheDir, [ctx.theme.colors.primary, ctx.theme.colors.accent]);
+  const { svgs } = await renderFigures(doc, ctx.cacheDir, renderOptions(ctx.theme, ctx.config));
   const dir = join(ctx.cacheDir, "review-img");
   mkdirSync(dir, { recursive: true });
   return Object.entries(svgs).map(([id, svg]) => {
     const out = join(dir, `${doc.name}-${id}.png`);
-    writeFileSync(out, new Resvg(readFileSync(svg), { fitTo: { mode: "width", value: 900 }, background: "white" }).render().asPng());
+    writeFileSync(out, new Resvg(readFileSync(svg), { fitTo: { mode: "width", value: ctx.config.review.imageWidth }, background: "white" }).render().asPng());
     return out;
   });
 }
@@ -65,10 +64,10 @@ export function reviewChecks(root: string, doc: Doc): Check[] {
           const images = await figurePngs(doc, ctx).catch(() => []);
           const claude = ctx.options.claude ?? defaultClaude;
           let last: Error | undefined;
-          for (let i = 0; i < 2 && !out; i++) {
+          for (let i = 0; i <= ctx.config.review.retries && !out; i++) {
             try {
               out = parseReviewOutput(
-                await claude({ prompt: buildPrompt(doc, a, images), schema: REVIEW_SCHEMA, model, addDirs: images.length ? [join(ctx.cacheDir, "review-img")] : [] }),
+                await claude({ prompt: buildPrompt(ctx.root, doc, a, images), schema: REVIEW_SCHEMA, model, timeoutMs: ctx.config.review.timeoutMs, addDirs: images.length ? [join(ctx.cacheDir, "review-img")] : [] }),
               );
             } catch (e) {
               if (e instanceof ToolMissing) throw e;

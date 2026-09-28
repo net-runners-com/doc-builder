@@ -1,0 +1,12 @@
+description: 「社外秘」などの表示
+regions: [cover, front, back, header, footer]
+defaults: { size: 9pt, border: 1pt, padding_x: 6pt, padding_y: 3pt }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    text: { type: string }
+    size: { type: string }
+    border: { type: string }
+    padding_x: { type: string }
+    padding_y: { type: string }

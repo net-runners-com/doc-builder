@@ -1,0 +1,18 @@
+name: 標準
+page_numbers: { start_at: front }
+cover:
+  - spacer: 28%
+  - title
+  - spacer: 10mm
+  - meta-table: { fields: [version, updated, owner] }
+front:
+  - toc: { depth: 2 }
+  - pagebreak
+header:
+  - row:
+      justify: space-between
+      children:
+        - text: { value: "{{meta.title}}", size: 8pt }
+        - text: { value: "{{meta.owner}}", size: 8pt }
+footer:
+  - row: { justify: center, children: [{ page-number: { format: "{page} / {pages}" } }] }

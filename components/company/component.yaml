@@ -1,0 +1,14 @@
+description: 会社ロゴと会社情報（company.yaml）
+regions: [cover, front, back]
+needs: [company]
+defaults: { show: [name, address, tel], logo: true, logo_height: 12mm, name_size: 11pt, detail_size: 9pt, spacing: 4pt }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    show: { type: array, items: { enum: [name, address, tel, email, url] } }
+    logo: { type: boolean }
+    logo_height: { type: string }
+    name_size: { type: string }
+    detail_size: { type: string }
+    spacing: { type: string }

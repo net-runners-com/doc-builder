@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { requireTool } from "../errors";
 
-export type ClaudeRunner = (args: { prompt: string; schema: object; model: string; addDirs: string[] }) => Promise<string>;
+export type ClaudeRunner = (args: { prompt: string; schema: object; model: string; addDirs: string[]; timeoutMs: number }) => Promise<string>;
 
 export const REVIEW_SCHEMA = {
   type: "object",
@@ -27,7 +27,7 @@ export interface ReviewOutput {
 }
 
 /** 同梱の読み取り専用設定で `claude -p` を呼ぶ */
-export const defaultClaude: ClaudeRunner = async ({ prompt, schema, model, addDirs }) => {
+export const defaultClaude: ClaudeRunner = async ({ prompt, schema, model, addDirs, timeoutMs }) => {
   const claude = requireTool("claude", "https://docs.claude.com/claude-code");
   const args = [
     claude, "-p",
@@ -40,7 +40,7 @@ export const defaultClaude: ClaudeRunner = async ({ prompt, schema, model, addDi
     ...addDirs.flatMap((d) => ["--add-dir", d]),
   ];
   const p = Bun.spawn(args, { stdin: new Blob([prompt]), stdout: "pipe", stderr: "pipe" });
-  const timer = setTimeout(() => p.kill(), 300_000);
+  const timer = setTimeout(() => p.kill(), timeoutMs);
   const [out, err, code] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text(), p.exited]);
   clearTimeout(timer);
   if (code !== 0) throw new Error(`claude が終了コード ${code}: ${(err || out).slice(0, 300)}`);

@@ -1,0 +1,14 @@
+description: 枠・余白・背景
+container: true
+regions: [cover, front, back, header, footer]
+defaults: { padding: 8pt, border_fade: 40% }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    padding: { type: string, pattern: "^-?\\d+(\\.\\d+)?(mm|cm|pt|em|%|fr)$" }
+    border: { type: string, pattern: "^-?\\d+(\\.\\d+)?(mm|cm|pt|em|%|fr)$" }
+    border_fade: { type: string }
+    fill: { type: string, description: "#RRGGBB / primary / accent" }
+    width: { type: string, pattern: "^-?\\d+(\\.\\d+)?(mm|cm|pt|em|%|fr)$" }
+    children: { type: array }

@@ -4,11 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { exitCode } from "../src/runner/format";
 import { runAll } from "../src/runner/run";
-import { MIN } from "./helpers";
+import { MIN, scaffold } from "./helpers";
 
 const root = mkdtempSync(join(tmpdir(), "dtr-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 mkdirSync(join(root, "content"));
+mkdirSync(join(root, "reviews"));
+scaffold(root);
 writeFileSync(join(root, "content", "ok.yaml"), MIN.guide);
 writeFileSync(join(root, "content", "broken.yaml"), "kind: guide\n");
 mkdirSync(join(root, "checks"));

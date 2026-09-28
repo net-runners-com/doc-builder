@@ -1,5 +1,6 @@
 import type { Config } from "../config";
 import type { ClaudeRunner } from "../review/claude";
+import type { ResolvedLayout } from "../page/types";
 import type { ResolvedTheme } from "../theme/types";
 import type { Doc, Finding, Group, Kind, Loc } from "../types";
 
@@ -9,6 +10,8 @@ export interface RunOptions {
   probe?: boolean;
   updateSnapshots?: boolean;
   theme?: string;
+  layout?: string;
+  wording?: string;
   paths?: string[];
   today?: Date;
   claude?: ClaudeRunner;
@@ -24,6 +27,7 @@ export interface BaseCtx {
 }
 export interface CheckCtx extends BaseCtx {
   theme: ResolvedTheme;
+  layout: ResolvedLayout;
 }
 
 export interface Check {

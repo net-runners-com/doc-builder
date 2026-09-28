@@ -1,4 +1,5 @@
 import type { Fact } from "./facts/types";
+import type { Strings } from "./wording";
 export type Kind = "terms" | "procedure" | "proposal" | "guide";
 export const KINDS: Kind[] = ["terms", "procedure", "proposal", "guide"];
 export type Group = "schema" | "rules" | "probe" | "online" | "review";
@@ -44,11 +45,6 @@ export interface TextNode {
   block?: Record<string, unknown>;
 }
 export type BuildErrorId = "schema/valid" | "ref/resolve" | "calc/eval";
-export interface Numbering {
-  terms: string;
-  procedure: string;
-  heading: "1.1" | "none";
-}
 export interface Doc {
   name: string;
   path: string;
@@ -59,6 +55,8 @@ export interface Doc {
   texts: TextNode[];
   placements: string[];
   citations: string[];
+  /** 固定文言・書式（表記スタイル。組み込み → wordings/<name>.json → 文書の strings:） */
+  strings: Strings;
   /** 文書内で定義した fact */
   facts: Record<string, Fact>;
   /** 本文から参照した fact / capture の ID */

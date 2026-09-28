@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
-import { layout } from "../src/build/layout";
+import { buildContent } from "../src/build/content";
 import { loadConfig } from "../src/config";
 import { loadDoc, runAll } from "../src/runner/run";
 
@@ -31,7 +31,7 @@ test("T1/P1/R1 は構造上発生しない", () => {
   );
   const proc = loadDoc(root, config, join(root, "content/setup-procedure.yaml")).doc;
   expect(Object.values(proc.defs).filter((d) => d.type === "step").map((d) => d.label)).toEqual(["手順1", "手順2", "手順3", "手順4"]);
-  const { doc, theme } = loadDoc(root, config, join(root, "content/proposal.yaml"));
-  const costs = layout(doc, theme, {}).nodes.find((n) => n.t === "table" && n.columns[0] === "項目" && n.columns[3] === "金額") as any;
+  const { doc } = loadDoc(root, config, join(root, "content/proposal.yaml"));
+  const costs = buildContent(doc, {}).nodes.find((n) => n.t === "table" && n.columns[0] === "項目" && n.columns[3] === "金額") as any;
   expect(costs.rows.at(-1)).toEqual(["合計", "", "", "24,000円"]);
 });

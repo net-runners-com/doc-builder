@@ -5,10 +5,12 @@ import { join } from "node:path";
 import { parseFocus } from "../src/server/html";
 import { startServer } from "../src/server";
 import { registerSuperset } from "../src/server/urls";
-import { MIN } from "./helpers";
+import { MIN, scaffold } from "./helpers";
 
 const root = mkdtempSync(join(tmpdir(), "dtr-srv-"));
 mkdirSync(join(root, "content"));
+mkdirSync(join(root, "reviews"));
+scaffold(root);
 writeFileSync(join(root, "content", "g.yaml"), MIN.guide.replace("本文", "TBD"));
 const superset = join(root, "hosted-urls.json");
 writeFileSync(superset, JSON.stringify([{ title: "会社共有", url: "https://x" }, { title: "g テスト", url: "old" }]));

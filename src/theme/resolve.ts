@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { parse } from "yaml";
 import { validateTheme } from "../schema/theme";
-import { FALLBACK, type ResolvedTheme, type Theme } from "./types";
+import type { ResolvedTheme, Theme } from "./types";
 
 type Partial = Record<string, any>;
 
@@ -18,7 +18,6 @@ export function listThemes(root: string): string[] {
 function absolutize(t: Partial, base: string): Partial {
   const out = structuredClone(t);
   if (typeof out.template === "string" && !isAbsolute(out.template)) out.template = resolve(base, out.template);
-  if (typeof out.cover?.logo === "string" && !isAbsolute(out.cover.logo)) out.cover.logo = resolve(base, out.cover.logo);
   return out;
 }
 
@@ -39,7 +38,7 @@ export function deepMerge(a: Partial, b: Partial): Partial {
 }
 
 /**
- * 解決順（後勝ち）: FALLBACK → default → extends 連鎖 → 文書のインライン上書き。
+ * 解決順（後勝ち）: themes/default.yaml → extends 連鎖 → 文書のインライン上書き。
  * CLI の --theme は spec として文書の theme を丸ごと置き換える（呼び出し側）。
  */
 export function resolveTheme(root: string, spec: unknown, docDir?: string): ResolvedTheme {
@@ -68,7 +67,7 @@ export function resolveTheme(root: string, spec: unknown, docDir?: string): Reso
       chain.unshift(readTheme(root, "default"));
     } catch {}
   }
-  let merged: Partial = structuredClone(FALLBACK);
+  let merged: Partial = {};
   for (const t of chain) merged = deepMerge(merged, t);
   if (spec && typeof spec === "object") {
     const { extends: _e, ...over } = spec as Partial;
@@ -77,9 +76,7 @@ export function resolveTheme(root: string, spec: unknown, docDir?: string): Reso
   delete merged.extends;
   errors.push(...validateTheme(merged));
   if (errors.length) {
-    // 不正なテーマでも文書チェックを続けられるよう、採番だけは FALLBACK を保証する
-    const numbering = validateTheme({ ...FALLBACK, numbering: merged.numbering }).length ? FALLBACK.numbering : merged.numbering;
-    return { ...(merged as Theme), numbering, id, errors };
+    return { ...(merged as Theme), id, errors };
   }
   return { ...(merged as Theme), id, errors };
 }

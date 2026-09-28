@@ -1,5 +1,4 @@
-import type { Numbering } from "../src/types";
-export const NUM: Numbering = { terms: "第{n}条", procedure: "手順{n}", heading: "1.1" };
+
 
 export const meta = (extra = "") =>
   `meta:\n  title: T\n  version: 1.0.0\n  updated: 2026-09-01\n  owner: O\n${extra}`;
@@ -14,11 +13,15 @@ export const MIN = {
 import type { Check, CheckCtx } from "../src/checks/define";
 import { loadConfig } from "../src/config";
 import { buildDoc } from "../src/parse/doc";
-import { fallbackTheme } from "../src/theme/types";
+import { join } from "node:path";
+import { resolveLayout } from "../src/page/resolve";
+import { resolveTheme } from "../src/theme/resolve";
+
+export const REPO = join(import.meta.dir, "..");
 import type { Doc } from "../src/types";
 
 export const docOf = (src: string, path = "/tmp/dtr-none/doc.yaml") => {
-  const d = buildDoc(path, src, NUM);
+  const d = buildDoc(path, src);
   if (d.buildErrors.length) throw new Error(JSON.stringify(d.buildErrors));
   return d;
 };
@@ -31,7 +34,8 @@ export function ctxFor(doc: Doc, over: Partial<CheckCtx> = {}): CheckCtx {
     options: {},
     today: new Date("2026-09-28"),
     cacheDir: "/tmp/dtr-none/cache",
-    theme: fallbackTheme(),
+    theme: resolveTheme(REPO, "default"),
+    layout: resolveLayout(REPO, "standard"),
     fail: (message, loc = {}) => ({ message, loc: { doc: doc.name, ...loc } }),
     ...over,
   };
@@ -40,3 +44,11 @@ export function ctxFor(doc: Doc, over: Partial<CheckCtx> = {}): CheckCtx {
 export const runCheck = async (c: Check, d: Doc, over: Partial<CheckCtx> = {}) => c.run(d, ctxFor(d, over));
 export const messages = async (c: Check, d: Doc, over: Partial<CheckCtx> = {}) =>
   (await runCheck(c, d, over)).map((f) => f.message);
+
+import { cpSync } from "node:fs";
+/** 一時プロジェクトに定義ファイル（テーマ・レイアウト・部品・レビュー指示文）を用意する */
+export function scaffold(root: string) {
+  for (const d of ["themes", "layouts", "components"]) cpSync(join(REPO, d), join(root, d), { recursive: true });
+  cpSync(join(REPO, "reviews", "_prompt.md"), join(root, "reviews", "_prompt.md"));
+  cpSync(join(REPO, "reviews", "_images.md"), join(root, "reviews", "_images.md"));
+}

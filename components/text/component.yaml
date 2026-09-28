@@ -1,0 +1,11 @@
+description: 任意の文字（{{meta.x}} を展開）
+regions: [cover, front, back, header, footer]
+defaults: { size: 10.5pt, bold: false }
+props:
+  type: object
+  additionalProperties: false
+  required: [value]
+  properties:
+    value: { type: string }
+    size: { type: string, pattern: "^\\d+(\\.\\d+)?pt$" }
+    bold: { type: boolean }

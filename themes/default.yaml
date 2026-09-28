@@ -11,23 +11,30 @@ fonts:
   body: [Noto Sans JP, Hiragino Sans, Hiragino Kaku Gothic ProN]
   heading: [Noto Sans JP, Hiragino Sans, Hiragino Kaku Gothic ProN]
   mono: [JetBrains Mono, Menlo]
-cover:
-  enabled: true
-  logo: ./assets/logo.svg
-  fields: [title, version, updated, owner]
-toc:
-  enabled: true
-  depth: 2
-header:
-  left: "{{meta.title}}"
-  right: "{{meta.owner}}"
-footer:
-  center: "{{page}} / {{pages}}"
-  start_at: toc
-numbering:
-  terms: "第{n}条"
-  procedure: "手順{n}"
-  heading: "1.1"
 watermark:
   when: "meta.version < 1.0"
   text: DRAFT
+typography:
+  base_size: 10.5pt
+  leading: 0.9em
+  heading_rule: 1pt
+  heading_rule_gap: 4pt
+  heading_above: 1.6em
+  heading_below: 0.9em
+  header_size: 8pt
+  header_fade: 30%
+  table_stroke: 0.5pt
+  table_inset: 6pt
+  table_line_fade: 60%
+  quote_rule: 2pt
+  quote_inset: 10pt
+  quote_inset_y: 4pt
+  attribution_size: 9pt
+  watermark_size: 90pt
+  watermark_angle: -40deg
+  watermark_fade: 90%
+  figure_width: 80%
+charts:
+  width: 420
+  height: 240
+  font: sans-serif

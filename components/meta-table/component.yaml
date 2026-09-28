@@ -1,0 +1,15 @@
+description: 文書情報の表（文書番号・版・日付など）
+regions: [cover, front, back]
+needs: [meta.$fields]
+defaults: { fields: [version, updated, owner], column_gap: 1.5em, row_gap: 0.7em, label_fade: 35% }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    fields:
+      type: array
+      minItems: 1
+      items: { enum: [title, version, updated, effective, owner, client, audience, number] }
+    column_gap: { type: string }
+    row_gap: { type: string }
+    label_fade: { type: string }

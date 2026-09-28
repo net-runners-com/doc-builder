@@ -1,0 +1,7 @@
+name: シンプル
+page_numbers: { start_at: body }
+front:
+  - title: { size: 20pt }
+  - spacer: 6mm
+footer:
+  - row: { justify: center, children: [page-number] }

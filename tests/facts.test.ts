@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { buildAll } from "../src/build";
 import { judge, probe } from "../src/facts/probe";
 import { runAll } from "../src/runner/run";
-import { MIN } from "./helpers";
+import { MIN, scaffold } from "./helpers";
 
 test("judge: 各 expect", () => {
   const r = { stdout: "AburadaBackup\nAburadaBackupWork\n", exit: 0, ms: 50 };
@@ -18,13 +18,15 @@ test("judge: 各 expect", () => {
 });
 
 test("probe: シェル不在は unknown", async () => {
-  const r = await probe({ id: "x", origin: "t", verify: { shell: "bash", run: "exit 0", expect: { exit: 0 } } }, { root: "/tmp" });
+  const r = await probe({ id: "x", origin: "t", verify: { shell: "bash", run: "exit 0", expect: { exit: 0 } } }, { root: "/tmp", timeoutMs: 5000 });
   expect(r.status).toBe(Bun.which("bash") ? "pass" : "unknown");
 });
 
 const root = mkdtempSync(join(tmpdir(), "dtr-facts-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 mkdirSync(join(root, "content"));
+mkdirSync(join(root, "reviews"));
+scaffold(root);
 const writeFacts = (tasks: string) =>
   writeFileSync(
     join(root, "facts.yaml"),

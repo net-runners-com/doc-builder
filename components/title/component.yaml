@@ -1,0 +1,9 @@
+description: 表題
+regions: [cover, front]
+needs: [meta.title]
+defaults: { size: 26pt }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    size: { type: string, pattern: "^\\d+(\\.\\d+)?pt$" }

@@ -3,8 +3,10 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { figureRender } from "../src/checks/builtin/figure";
-import { renderFigures } from "../src/render";
-import { MIN, docOf, messages } from "./helpers";
+import { loadConfig } from "../src/config";
+import { renderFigures, renderOptions } from "../src/render";
+import { resolveTheme } from "../src/theme/resolve";
+import { MIN, REPO, docOf, messages } from "./helpers";
 
 const cacheDir = mkdtempSync(join(tmpdir(), "dtr-render-"));
 afterAll(() => rmSync(cacheDir, { recursive: true, force: true }));
@@ -18,7 +20,7 @@ const doc = (figs: string) =>
 const ok = '  - { id: flow, type: diagram, caption: c, source: "a -> b" }\n  - { id: chart, type: chart, caption: c, chart: bar, data: "{{ref:effects}}", x: 項目, y: [現状, 導入後] }\n';
 
 test("D2 と Vega-Lite を SVG に描画する", async () => {
-  const { svgs, errors } = await renderFigures(doc(ok), cacheDir, ["#1F4E79", "#C45A00"]);
+  const { svgs, errors } = await renderFigures(doc(ok), cacheDir, renderOptions(resolveTheme(REPO, "default"), loadConfig(REPO)));
   expect(errors).toEqual([]);
   expect(readFileSync(svgs.flow, "utf8")).toContain("<svg");
   expect(readFileSync(svgs.chart, "utf8")).toContain("<svg");

@@ -1,7 +1,8 @@
 import { basename, dirname, extname } from "node:path";
 import { validateDoc } from "../schema/doc";
 import { factText, type Fact } from "../facts/types";
-import type { BuildErrorId, Def, Doc, Finding, Numbering, TextNode } from "../types";
+import { defaultStrings, resolveWording, t, validateStrings } from "../wording";
+import type { BuildErrorId, Def, Doc, Finding, TextNode } from "../types";
 import { evalCalc, formatNumber } from "./calc";
 import { loadYaml } from "./yaml";
 
@@ -15,9 +16,18 @@ const SKIP = new Set([
   "verify", "capture",
 ]);
 
-const fmt = (tpl: string, n: number | string) => tpl.replace("{n}", String(n));
 
-export function buildDoc(path: string, src: string, numbering: Numbering, project: Record<string, Fact> = {}): Doc {
+export interface BuildOptions {
+  /** facts.yaml の fact */
+  facts?: Record<string, Fact>;
+  /** wordings/ を探すプロジェクトルート */
+  root?: string;
+  /** 表記スタイル名（CLI --wording。文書の wording: より優先） */
+  wording?: string;
+}
+
+export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Doc {
+  const project = opts.facts ?? {};
   const loaded = loadYaml(src);
   const name = basename(path, extname(path));
   const buildErrors: Doc["buildErrors"] = [];
@@ -43,6 +53,7 @@ export function buildDoc(path: string, src: string, numbering: Numbering, projec
     texts,
     placements,
     citations,
+    strings: defaultStrings(),
     facts,
     factRefs,
     buildErrors,
@@ -60,6 +71,11 @@ export function buildDoc(path: string, src: string, numbering: Numbering, projec
     return doc;
   }
   doc.kind = data.kind;
+  for (const e of validateStrings(data.strings ?? {})) err("schema/valid", e.message, { line: lineOf(`/strings/${e.key}`) });
+  const w = opts.root ? resolveWording(opts.root, opts.wording ?? data.wording ?? "default") : { strings: defaultStrings(), errors: [] };
+  for (const e of w.errors) err("schema/valid", `表記スタイル: ${e}`, { line: lineOf("/wording") });
+  const s = (doc.strings = { ...w.strings, ...(data.strings ?? {}) });
+  if (buildErrors.length) return doc;
 
   // --- 定義と採番 ---
   const define = (id: string, def: Omit<Def, "line">) => {
@@ -68,23 +84,23 @@ export function buildDoc(path: string, src: string, numbering: Numbering, projec
     else defs[id] = { ...def, line };
   };
   (data.articles ?? []).forEach((a: any, i: number) =>
-    define(a.id, { type: "article", ptr: `/articles/${i}`, label: fmt(numbering.terms, i + 1) }),
+    define(a.id, { type: "article", ptr: `/articles/${i}`, label: t(s, "number.article", { n: i + 1 }) }),
   );
-  (data.steps ?? []).forEach((s: any, i: number) =>
-    define(s.id, { type: "step", ptr: `/steps/${i}`, label: fmt(numbering.procedure, i + 1) }),
+  (data.steps ?? []).forEach((st: any, i: number) =>
+    define(st.id, { type: "step", ptr: `/steps/${i}`, label: t(s, "number.step", { n: i + 1 }) }),
   );
   const defineSections = (list: any[], ptr: string, prefix: string) =>
-    list.forEach((s, i) => {
+    list.forEach((sec, i) => {
       const num = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
-      const label = numbering.heading === "none" ? `「${s.title}」` : `「${prefix ? num : num + "."} ${s.title}」`;
-      define(s.id, { type: "section", ptr: `${ptr}/${i}`, label });
-      if (s.children) defineSections(s.children, `${ptr}/${i}/children`, num);
+      const label = s["heading.style"] === "none" ? t(s, "ref.section-plain", { title: sec.title }) : t(s, "ref.section", { num: prefix ? num : num + ".", title: sec.title });
+      define(sec.id, { type: "section", ptr: `${ptr}/${i}`, label });
+      if (sec.children) defineSections(sec.children, `${ptr}/${i}/children`, num);
     });
   defineSections(data.sections ?? [], "/sections", "");
-  (data.tables ?? []).forEach((t: any, i: number) => define(t.id, { type: "table", ptr: `/tables/${i}`, label: `表${i + 1}` }));
+  (data.tables ?? []).forEach((tb: any, i: number) => define(tb.id, { type: "table", ptr: `/tables/${i}`, label: t(s, "number.table", { n: i + 1 }) }));
   (data.images ?? []).forEach((m: any, i: number) => define(m.id, { type: "image", ptr: `/images/${i}` }));
   (data.figures ?? []).forEach((f: any, i: number) => define(f.id, { type: "figure", ptr: `/figures/${i}` }));
-  (data.sources ?? []).forEach((s: any, i: number) => define(s.id, { type: "source", ptr: `/sources/${i}` }));
+  (data.sources ?? []).forEach((src: any, i: number) => define(src.id, { type: "source", ptr: `/sources/${i}` }));
   (data.facts ?? []).forEach((f: any, i: number) => {
     const line = lineOf(`/facts/${i}`);
     if (project[f.id]) err("ref/resolve", `fact ID "${f.id}" は facts.yaml と重複しています`, { blockId: f.id, line });
@@ -124,10 +140,10 @@ export function buildDoc(path: string, src: string, numbering: Numbering, projec
     }
   }
   placements.forEach((id, i) => {
-    if (defs[id] && (defs[id].type === "image" || defs[id].type === "figure")) defs[id].label = `図${i + 1}`;
+    if (defs[id] && (defs[id].type === "image" || defs[id].type === "figure")) defs[id].label = t(s, "number.figure", { n: i + 1 });
   });
   citations.forEach((id, i) => {
-    if (defs[id]?.type === "source") defs[id].label = `[${i + 1}]`;
+    if (defs[id]?.type === "source") defs[id].label = t(s, "number.source", { n: i + 1 });
   });
 
   // --- 展開 ---

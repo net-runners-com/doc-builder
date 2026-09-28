@@ -1,0 +1,9 @@
+description: 目次
+regions: [cover, front]
+defaults: { depth: 2 }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    depth: { type: integer, minimum: 1, maximum: 3 }
+    title: { type: string }

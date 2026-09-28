@@ -11,15 +11,12 @@ export interface Fetched {
   fetchedAt: string;
 }
 
-/** ボット遮断・認証などで内容を判定できないステータス */
-const BLOCKED = new Set([401, 403, 407, 429, 503]);
-
 export async function fetchCached(url: string, ctx: CheckCtx): Promise<Fetched | null> {
   const dir = join(ctx.cacheDir, "http");
   const file = join(dir, createHash("sha1").update(url).digest("hex") + ".json");
   if (!ctx.options.online) return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : null;
   try {
-    const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(10_000), headers: { "user-agent": "doc-test-runner/0.1" } });
+    const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(ctx.config.online.timeoutMs), headers: { "user-agent": ctx.config.online.userAgent } });
     const f: Fetched = { status: res.status, text: await res.text(), fetchedAt: new Date().toISOString() };
     mkdirSync(dir, { recursive: true });
     writeFileSync(file, JSON.stringify(f));
@@ -56,7 +53,7 @@ async function perSource(
     const f = await fetchCached(it.url, ctx);
     if (!f) skipped++;
     else if (f.status === 0) unknown.push(`${it.url}: 取得失敗 (${f.text})`);
-    else if (BLOCKED.has(f.status)) unknown.push(`${it.url}: HTTP ${f.status}（遮断の可能性）`);
+    else if (ctx.config.online.blockedStatuses.includes(f.status)) unknown.push(`${it.url}: HTTP ${f.status}（遮断の可能性）`);
     else {
       const r = it.judge(f);
       if (r !== "ok") out.push(r);

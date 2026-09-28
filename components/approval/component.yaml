@@ -1,0 +1,13 @@
+description: 承認印の欄（meta.approvals）
+regions: [cover, front, back]
+needs: [meta.approvals]
+defaults: { roles: [承認, 確認, 作成], cell_width: 22mm, stamp_height: 14mm, cell_height: 16mm, size: 8pt }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    roles: { type: array, minItems: 1, items: { type: string } }
+    cell_width: { type: string }
+    cell_height: { type: string }
+    stamp_height: { type: string }
+    size: { type: string }

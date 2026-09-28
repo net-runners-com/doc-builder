@@ -30,6 +30,20 @@ const meta = (extra: string[]) => ({
     client: str,
     audience: str,
     estimated_time: str,
+    number: str,
+    approvals: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["role"],
+        additionalProperties: false,
+        properties: { role: str, name: str, date, stamp: str },
+      },
+    },
+    history: {
+      type: "array",
+      items: { type: "object", required: ["version", "date", "note"], additionalProperties: false, properties: { version: str, date, note: str } },
+    },
   },
 });
 
@@ -37,6 +51,9 @@ const common = {
   kind: { enum: KINDS },
   facts: { type: "array", items: factSchema },
   theme: { anyOf: [str, { type: "object" }] },
+  layout: { anyOf: [str, { type: "object" }] },
+  wording: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
+  strings: { type: "object", additionalProperties: { type: "string" } },
   glossary: {
     type: "array",
     items: { type: "object", required: ["term", "avoid"], additionalProperties: false, properties: { term: str, avoid: strs } },

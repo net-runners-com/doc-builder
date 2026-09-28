@@ -1,5 +1,5 @@
 import { ToolMissing, Unknown } from "../../errors";
-import { renderFigures } from "../../render";
+import { renderFigures, renderOptions } from "../../render";
 import { defineCheck } from "../define";
 
 export const figureRender = defineCheck({
@@ -8,7 +8,7 @@ export const figureRender = defineCheck({
   kinds: ["*"],
   severity: "error",
   async run(doc, ctx) {
-    const { errors } = await renderFigures(doc, ctx.cacheDir, [ctx.theme.colors.primary, ctx.theme.colors.accent]);
+    const { errors } = await renderFigures(doc, ctx.cacheDir, renderOptions(ctx.theme, ctx.config));
     const missing = errors.filter((e) => e.error instanceof ToolMissing);
     const out = errors
       .filter((e) => !(e.error instanceof ToolMissing))

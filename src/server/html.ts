@@ -112,8 +112,11 @@ export function treePage(root: string, report: Report, f: Focus, files: Record<s
   return shell("doc-test-runner", `${header}<main><nav class="tree">${tree}</nav><section class="detail">${detail}</section></main>`, version);
 }
 
-export function previewPage(doc: string, themes: string[], current: string, version: number): string {
-  const opts = themes.map((t) => `<option${t === current ? " selected" : ""}>${h(t)}</option>`).join("");
-  const body = `<header><b><a href="/t/${enc(doc)}">← ${h(doc)}</a></b><select onchange="location.search='?theme='+this.value"><option value="">（文書の既定）</option>${opts}</select></header><iframe src="/pdf/${enc(doc)}${current ? `?theme=${enc(current)}` : ""}"></iframe>`;
+export function previewPage(doc: string, lists: { themes: string[]; layouts: string[] }, cur: { theme?: string; layout?: string }, version: number): string {
+  const sel = (name: "theme" | "layout", items: string[]) =>
+    `<select onchange="const u=new URLSearchParams(location.search);this.value?u.set('${name}',this.value):u.delete('${name}');location.search=u">` +
+    `<option value="">${name}: 文書の既定</option>${items.map((t) => `<option${t === cur[name] ? " selected" : ""}>${h(t)}</option>`).join("")}</select>`;
+  const q = new URLSearchParams(Object.entries(cur).filter(([, v]) => v) as [string, string][]).toString();
+  const body = `<header><b><a href="/t/${enc(doc)}">← ${h(doc)}</a></b>${sel("theme", lists.themes)}${sel("layout", lists.layouts)}</header><iframe src="/pdf/${enc(doc)}${q ? `?${q}` : ""}"></iframe>`;
   return shell(`${doc} プレビュー`, body, version);
 }

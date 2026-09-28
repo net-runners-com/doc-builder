@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { parseReviewOutput } from "../src/review/claude";
 import { runAll } from "../src/runner/run";
 import type { ClaudeRunner } from "../src/review/claude";
-import { MIN } from "./helpers";
+import { MIN, scaffold } from "./helpers";
 
 const root = mkdtempSync(join(tmpdir(), "dtr-review-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -13,6 +13,7 @@ mkdirSync(join(root, "content"));
 mkdirSync(join(root, "reviews"));
 writeFileSync(join(root, "content", "g.yaml"), MIN.guide);
 writeFileSync(join(root, "reviews", "guide.yaml"), "aspects:\n  - { id: a1, ask: 観点1 }\n");
+scaffold(root);
 
 const review = (r: Awaited<ReturnType<typeof runAll>>) => r.results.find((x) => x.checkId === "review/a1")!;
 

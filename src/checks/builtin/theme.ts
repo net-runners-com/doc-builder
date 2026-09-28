@@ -14,7 +14,6 @@ export const themeValid = defineProjectCheck({
     for (const id of listThemes(ctx.root)) {
       const t = resolveTheme(ctx.root, id);
       for (const e of t.errors) out.push(ctx.fail(`${id}: ${e}`, { blockId: id }));
-      if (t.cover?.logo && !existsSync(t.cover.logo)) out.push(ctx.fail(`${id}: ロゴが存在しません: ${t.cover.logo}`, { blockId: id }));
       if (t.template && !existsSync(t.template)) out.push(ctx.fail(`${id}: テンプレートが存在しません: ${t.template}`, { blockId: id }));
       try {
         const fonts = installedFonts();

@@ -28,15 +28,13 @@ export const glossaryAvoid = defineCheck({
   },
 });
 
-const PLACEHOLDER = /\bTBD\b|\bTODO\b|\bXXX\b|〇〇|○○|未定(?!義)/g;
-
 export const placeholder = defineCheck({
   id: "text/placeholder",
   group: "rules",
   kinds: ["*"],
   severity: "error",
   run: (doc, ctx) =>
-    doc.texts.flatMap((t) => [...plain(t.raw).matchAll(PLACEHOLDER)].map((m) => ctx.fail(`未記入のプレースホルダ「${m[0]}」`, at(t)))),
+    doc.texts.flatMap((t) => [...plain(t.raw).matchAll(new RegExp(ctx.config.placeholders.join("|"), "g"))].map((m) => ctx.fail(`未記入のプレースホルダ「${m[0]}」`, at(t)))),
 });
 
 export const headingInBody = defineCheck({

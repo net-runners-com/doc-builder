@@ -1,0 +1,11 @@
+description: ヘッダー・フッター用の小さいロゴと社名
+regions: [header, footer, cover]
+needs: [company]
+defaults: { logo_height: 5mm, size: 8pt, gap: 4pt }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    logo_height: { type: string }
+    size: { type: string }
+    gap: { type: string }

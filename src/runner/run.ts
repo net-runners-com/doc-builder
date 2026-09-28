@@ -10,6 +10,7 @@ import { cacheDir, loadConfig, type Config } from "../config";
 import { buildDoc } from "../parse/doc";
 import { loadYaml } from "../parse/yaml";
 import { reviewChecks } from "../review/checks";
+import { resolveLayout } from "../page/resolve";
 import { resolveTheme } from "../theme/resolve";
 import type { CheckResult, Report } from "../types";
 
@@ -37,12 +38,19 @@ async function loadUserChecks(root: string): Promise<Check[]> {
   return out;
 }
 
-export function loadDoc(root: string, config: Config, file: string, themeOverride?: string, facts?: Record<string, Fact>) {
+export interface LoadOverrides {
+  theme?: string;
+  layout?: string;
+  wording?: string;
+}
+
+export function loadDoc(root: string, config: Config, file: string, over: LoadOverrides = {}, facts?: Record<string, Fact>) {
   const src = readFileSync(file, "utf8");
-  const spec = themeOverride ?? loadYaml(src).data?.theme ?? config.defaultTheme;
-  const theme = resolveTheme(root, spec, join(file, ".."));
-  const doc = buildDoc(file, src, theme.numbering, facts ?? loadFacts(root).facts);
-  return { doc, theme };
+  const data = loadYaml(src).data;
+  const theme = resolveTheme(root, over.theme ?? data?.theme ?? config.defaultTheme, join(file, ".."));
+  const layout = resolveLayout(root, over.layout ?? data?.layout ?? config.defaultLayout);
+  const doc = buildDoc(file, src, { facts: facts ?? loadFacts(root).facts, root, wording: over.wording });
+  return { doc, theme, layout };
 }
 
 async function runOne(
@@ -85,15 +93,15 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
   };
 
   const facts = loadFacts(root).facts;
-  const loaded = discover(root, config, options.paths).map((f) => loadDoc(root, config, f, options.theme?.split(",")[0], facts));
+  const loaded = discover(root, config, options.paths).map((f) => loadDoc(root, config, f, { theme: options.theme?.split(",")[0], layout: options.layout?.split(",")[0], wording: options.wording }, facts));
   const docs = loaded.map((l) => l.doc);
 
   await project(PROJECT_DOC, projectChecks);
   // 実機検証を先に走らせ、fact/refs が同じ実行の結果を読めるようにする
   await project(FACTS_DOC, [factsValid, ...probeTargets(root, docs).map(probeCheck)]);
 
-  for (const { doc, theme } of loaded) {
-    const ctx: CheckCtx = { ...base(doc.name), theme };
+  for (const { doc, theme, layout } of loaded) {
+    const ctx: CheckCtx = { ...base(doc.name), theme, layout };
     const checks = [...builtinChecks, ...userChecks, ...reviewChecks(root, doc)].filter(
       (c) => c.group === "schema" || !doc.kind || c.kinds.includes("*") || c.kinds.includes(doc.kind),
     );

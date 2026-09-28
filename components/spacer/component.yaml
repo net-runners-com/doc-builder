@@ -1,0 +1,6 @@
+description: 空白（長さ、% または fill で残りを埋める）
+regions: [cover, front, back]
+props:
+  anyOf:
+    - { type: string, pattern: "^\\d+(\\.\\d+)?(mm|cm|pt|em|%)$" }
+    - { const: fill }

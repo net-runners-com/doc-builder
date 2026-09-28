@@ -1,20 +1,29 @@
 import { copyFileSync, mkdirSync } from "node:fs";
 import { extname, join } from "node:path";
-import type { ResolvedTheme } from "../theme/types";
-import type { Layout, Node } from "./layout";
+import type { Company } from "../page/company";
+import { mdCtx, type Registry } from "../page/components";
+import { regionMd } from "../page/emit";
+import type { ResolvedLayout } from "../page/types";
+import { t, type Strings } from "../wording";
+import type { Content, Node } from "./content";
 
 const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
 
-/** Markdown に反映しないテーマ項目 */
-export const MD_IGNORED = ["page", "colors", "fonts", "header", "footer", "watermark", "template", "cover.logo"];
+/** Markdown に反映しないもの */
+export const MD_IGNORED = ["テーマ（色・フォント・用紙・透かし）", "レイアウトの header / footer", "md.ts の無い部品"];
 
-export function emitMarkdown(l: Layout, theme: ResolvedTheme, outDir: string, docName: string): string {
+export function emitMarkdown(
+  l: Content,
+  page: ResolvedLayout,
+  reg: Registry,
+  data: { meta: Record<string, any>; company?: Company; strings: Strings },
+  outDir: string,
+  docName: string,
+): string {
+  const headings = l.nodes.filter((n): n is Extract<Node, { t: "h" }> => n.t === "h").map((h) => ({ level: h.level, text: h.text }));
+  const ctx = mdCtx({ meta: data.meta, company: data.company, strings: data.strings, headings });
   const out: string[] = [`# ${l.title}`, ""];
-  if (theme.cover.enabled && l.cover.length) out.push(...l.cover.map((c) => `- ${c.label}: ${c.value}`), "");
-  if (theme.toc.enabled) {
-    const hs = l.nodes.filter((n): n is Extract<Node, { t: "h" }> => n.t === "h" && n.level - 1 <= theme.toc.depth);
-    if (hs.length) out.push("## 目次", "", ...hs.map((h) => `${"  ".repeat(h.level - 2)}- ${h.text}`), "");
-  }
+  out.push(...regionMd(page.cover, reg, ctx), ...regionMd(page.front, reg, ctx));
   for (const n of l.nodes) {
     switch (n.t) {
       case "h":
@@ -52,9 +61,10 @@ export function emitMarkdown(l: Layout, theme: ResolvedTheme, outDir: string, do
         break;
       }
       case "sources":
-        out.push("## 出典", "", ...n.items.map((s) => `${s.label} ${s.title}. <${s.url}>（閲覧日: ${s.accessed}）  `), "");
+        out.push(`## ${t(data.strings, "section.sources")}`, "", ...n.items.map((s) => `${s.label} ${s.title}. <${s.url}>${t(data.strings, "label.accessed", { date: s.accessed })}  `), "");
         break;
     }
   }
-  return out.join("\n").replace(/\n+$/, "\n");
+  out.push(...regionMd(page.back, reg, ctx));
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").replace(/\n+$/, "\n");
 }

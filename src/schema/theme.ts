@@ -4,10 +4,12 @@ const str = { type: "string" };
 const strs = { type: "array", items: str, minItems: 1 };
 const color = { type: "string", pattern: "^#[0-9A-Fa-f]{6}$" };
 const length = { type: "string", pattern: "^\\d+(\\.\\d+)?(mm|cm|pt|in)$" };
-const hf = { type: "object", additionalProperties: false, properties: { left: str, center: str, right: str } };
 const obj = (required: string[], properties: Record<string, unknown>) => ({ type: "object", required, additionalProperties: false, properties });
 
-const schema = obj(["page", "colors", "fonts", "cover", "toc", "header", "footer", "numbering"], {
+const len = { type: "string", pattern: "^-?\\d+(\\.\\d+)?(mm|cm|pt|em|%|deg)$" };
+const typographyKeys = ["base_size", "leading", "heading_rule", "heading_rule_gap", "heading_above", "heading_below", "header_size", "header_fade", "table_stroke", "table_inset", "table_line_fade", "quote_rule", "quote_inset", "quote_inset_y", "attribution_size", "watermark_size", "watermark_angle", "watermark_fade", "figure_width"];
+
+const schema = obj(["page", "colors", "fonts", "typography", "charts"], {
   name: str,
   extends: str,
   id: str,
@@ -18,19 +20,8 @@ const schema = obj(["page", "colors", "fonts", "cover", "toc", "header", "footer
   }),
   colors: obj(["primary", "accent", "text", "background"], { primary: color, accent: color, text: color, background: color }),
   fonts: obj(["body", "heading", "mono"], { body: strs, heading: strs, mono: strs }),
-  cover: obj(["enabled", "fields"], {
-    enabled: { type: "boolean" },
-    logo: str,
-    fields: { type: "array", items: { enum: ["title", "version", "updated", "effective", "owner", "client", "audience"] } },
-  }),
-  toc: obj(["enabled", "depth"], { enabled: { type: "boolean" }, depth: { type: "integer", minimum: 1, maximum: 3 } }),
-  header: hf,
-  footer: { ...hf, required: ["start_at"], properties: { ...hf.properties, start_at: { enum: ["cover", "toc", "body"] } } },
-  numbering: obj(["terms", "procedure", "heading"], {
-    terms: { type: "string", pattern: "\\{n\\}" },
-    procedure: { type: "string", pattern: "\\{n\\}" },
-    heading: { enum: ["1.1", "none"] },
-  }),
+  typography: obj(typographyKeys, Object.fromEntries(typographyKeys.map((k) => [k, len]))),
+  charts: obj(["width", "height", "font"], { width: { type: "number" }, height: { type: "number" }, font: str }),
   watermark: obj(["when", "text"], { when: { type: "string", pattern: "^meta\\.version\\s*(<=|>=|<|>|==)\\s*\\d+(\\.\\d+){0,2}$" }, text: str }),
   template: str,
 });

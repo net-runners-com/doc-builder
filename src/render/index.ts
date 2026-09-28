@@ -10,16 +10,16 @@ const hash = (s: string) => createHash("sha1").update(s).digest("hex").slice(0, 
 
 export class RenderError extends Error {}
 
-export async function renderD2(source: string, cacheDir: string): Promise<string> {
+export async function renderD2(source: string, cacheDir: string, pad: number): Promise<string> {
   const d2 = requireTool("d2", "brew install d2");
   const dir = join(cacheDir, "render");
   mkdirSync(dir, { recursive: true });
-  const h = hash(source);
+  const h = hash(`${pad}:${source}`);
   const out = join(dir, `${h}.svg`);
   if (existsSync(out)) return out;
   const input = join(dir, `${h}.d2`);
   writeFileSync(input, source);
-  const p = Bun.spawnSync([d2, "--pad", "20", input, out], { stderr: "pipe", stdout: "pipe" });
+  const p = Bun.spawnSync([d2, "--pad", String(pad), input, out], { stderr: "pipe", stdout: "pipe" });
   if (p.exitCode !== 0) throw new RenderError(`D2: ${p.stderr.toString().trim().split("\n").slice(-3).join(" ")}`);
   return out;
 }
@@ -52,9 +52,16 @@ export function chartTable(doc: Doc, fig: ChartFigure): Table {
   return t;
 }
 
-export function chartSpec(fig: ChartFigure, t: Table, colors: string[]): object {
+export interface ChartStyle {
+  colors: string[];
+  width: number;
+  height: number;
+  font: string;
+}
+
+export function chartSpec(fig: ChartFigure, t: Table, style: ChartStyle): object {
   const values = t.rows.map((r) => Object.fromEntries(t.columns.map((c, i) => [c, r[i]])));
-  const base = { $schema: "https://vega.github.io/schema/vega-lite/v6.json", data: { values }, width: 420, height: 240, config: { font: "sans-serif", range: { category: colors } } };
+  const base = { $schema: "https://vega.github.io/schema/vega-lite/v6.json", data: { values }, width: style.width, height: style.height, config: { font: style.font, range: { category: style.colors } } };
   if (fig.chart === "pie")
     return { ...base, mark: "arc", encoding: { theta: { field: fig.y[0], type: "quantitative" }, color: { field: fig.x, type: "nominal" } } };
   const enc = {
@@ -70,9 +77,9 @@ export function chartSpec(fig: ChartFigure, t: Table, colors: string[]): object 
   };
 }
 
-export async function renderChart(doc: Doc, fig: ChartFigure, cacheDir: string, colors: string[]): Promise<string> {
+export async function renderChart(doc: Doc, fig: ChartFigure, cacheDir: string, style: ChartStyle): Promise<string> {
   const t = chartTable(doc, fig);
-  const spec = chartSpec(fig, t, colors);
+  const spec = chartSpec(fig, t, style);
   const dir = join(cacheDir, "render");
   mkdirSync(dir, { recursive: true });
   const out = join(dir, `${hash(JSON.stringify(spec))}.svg`);
@@ -84,12 +91,23 @@ export async function renderChart(doc: Doc, fig: ChartFigure, cacheDir: string, 
 }
 
 /** 文書の全図を描画して id → svg パスを返す。失敗は errors に積む */
-export async function renderFigures(doc: Doc, cacheDir: string, colors: string[]) {
+export interface RenderOptions {
+  chart: ChartStyle;
+  d2Pad: number;
+}
+
+/** テーマと設定から描画オプションを作る */
+export const renderOptions = (theme: { colors: { primary: string; accent: string }; charts: { width: number; height: number; font: string } }, cfg: { render: { d2Pad: number } }): RenderOptions => ({
+  chart: { colors: [theme.colors.primary, theme.colors.accent], ...theme.charts },
+  d2Pad: cfg.render.d2Pad,
+});
+
+export async function renderFigures(doc: Doc, cacheDir: string, o: RenderOptions) {
   const svgs: Record<string, string> = {};
   const errors: { id: string; error: Error }[] = [];
   for (const f of doc.data.figures ?? []) {
     try {
-      svgs[f.id] = f.type === "diagram" ? await renderD2(f.source, cacheDir) : await renderChart(doc, f, cacheDir, colors);
+      svgs[f.id] = f.type === "diagram" ? await renderD2(f.source, cacheDir, o.d2Pad) : await renderChart(doc, f, cacheDir, o.chart);
     } catch (e) {
       errors.push({ id: f.id, error: e as Error });
     }

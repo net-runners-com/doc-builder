@@ -21,8 +21,8 @@ function argv(shell: Shell, run: string): string[] | undefined {
   return shell === "powershell" || shell === "pwsh" ? [exe, "-NoProfile", "-NonInteractive", "-Command", run] : [exe, "-c", run];
 }
 
-const toMs = (t: number | string | undefined) =>
-  t === undefined ? 30_000 : typeof t === "number" ? t * 1000 : t.endsWith("ms") ? Number(t.slice(0, -2)) : Number(t.slice(0, -1)) * 1000;
+const toMs = (t: number | string | undefined, dflt: number) =>
+  t === undefined ? dflt : typeof t === "number" ? t * 1000 : t.endsWith("ms") ? Number(t.slice(0, -2)) : Number(t.slice(0, -1)) * 1000;
 
 export async function execute(shell: Shell | undefined, run: string, timeoutMs: number) {
   const sh = shell ?? defaultShell();
@@ -65,7 +65,7 @@ export function judge(e: Expect, r: { stdout: string; exit: number; ms: number }
 export const normalizeOutput = (s: string, patterns: string[] = []) =>
   patterns.reduce((acc, p) => acc.replace(new RegExp(p, "g"), "…"), s).replace(/\s+$/, "") + "\n";
 
-export async function probe(f: Fact, opts: { root: string; updateSnapshots?: boolean; snapshot?: string }): Promise<ProbeResult> {
+export async function probe(f: Fact, opts: { root: string; timeoutMs: number; updateSnapshots?: boolean; snapshot?: string }): Promise<ProbeResult> {
   const base = { host: hostname(), at: new Date().toISOString() };
   const messages: string[] = [];
   let status: ProbeResult["status"] = "pass";
@@ -76,7 +76,7 @@ export async function probe(f: Fact, opts: { root: string; updateSnapshots?: boo
   };
 
   if (f.verify) {
-    const r = await execute(f.verify.shell, f.verify.run, toMs(f.verify.timeout));
+    const r = await execute(f.verify.shell, f.verify.run, toMs(f.verify.timeout, opts.timeoutMs));
     if ("error" in r) {
       bump("unknown");
       messages.push(r.error!);
@@ -91,7 +91,7 @@ export async function probe(f: Fact, opts: { root: string; updateSnapshots?: boo
     }
   }
   if (f.capture) {
-    const r = await execute(f.capture.shell, f.capture.run, 30_000);
+    const r = await execute(f.capture.shell, f.capture.run, opts.timeoutMs);
     if ("error" in r) {
       bump("unknown");
       messages.push(`capture: ${r.error}`);

@@ -1,5 +1,6 @@
 contentDir: content
 defaultTheme: default
+defaultLayout: standard
 review:
   model: sonnet
 sourceMaxAgeDays: 365

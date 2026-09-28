@@ -33,7 +33,7 @@ export function probeCheck(f: Fact): ProjectCheck {
       let r: ProbeResult | undefined;
       let fresh = false;
       if (ctx.options.probe) {
-        r = await probe(f, { root: ctx.root, updateSnapshots: ctx.options.updateSnapshots, snapshot: readSnapshot(ctx.root, f.id) });
+        r = await probe(f, { root: ctx.root, timeoutMs: ctx.config.probe.timeoutMs, updateSnapshots: ctx.options.updateSnapshots, snapshot: readSnapshot(ctx.root, f.id) });
         mkdirSync(join(ctx.cacheDir, "probe"), { recursive: true });
         writeFileSync(cacheFile(ctx, f.id), JSON.stringify(r));
         fresh = true;

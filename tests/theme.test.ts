@@ -25,7 +25,6 @@ test("同梱テーマは妥当で、extends が効く", () => {
   expect(s.errors).toEqual([]);
   expect(s.colors.primary).toBe("#B0305A");
   expect(s.page.size).toBe("A4");
-  expect(s.cover.logo).toBe(join(repo, "themes/assets/logo.svg"));
 });
 
 test("文書のインライン上書き", () => {
@@ -34,13 +33,12 @@ test("文書のインライン上書き", () => {
   expect(t.colors.background).toBe("#12241B");
 });
 
-test("extends の循環・欠落はエラー、採番は FALLBACK で続行", () => {
+test("extends の循環・欠落はエラー", () => {
   writeFileSync(join(root, "themes", "a.yaml"), "extends: b\n");
-  writeFileSync(join(root, "themes", "b.yaml"), "extends: a\nnumbering: { terms: X }\n");
+  writeFileSync(join(root, "themes", "b.yaml"), "extends: a\n");
   writeFileSync(join(root, "themes", "c.yaml"), "extends: nope\n");
   const a = resolveTheme(root, "a");
   expect(a.errors.join()).toContain("循環");
-  expect(a.numbering.terms).toBe("第{n}条");
   expect(resolveTheme(root, "c").errors.join()).toContain('"nope" が見つかりません');
 });
 

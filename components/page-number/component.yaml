@@ -1,0 +1,8 @@
+description: ページ番号
+regions: [header, footer]
+defaults: { format: "{page} / {pages}" }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    format: { type: string }

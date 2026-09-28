@@ -1,0 +1,11 @@
+description: 子要素を横に並べる
+container: true
+regions: [cover, front, back, header, footer]
+defaults: { justify: start, gap: 8pt }
+props:
+  type: object
+  additionalProperties: false
+  properties:
+    justify: { enum: [start, center, end, space-between] }
+    gap: { type: string, pattern: "^-?\\d+(\\.\\d+)?(mm|cm|pt|em|%|fr)$" }
+    children: { type: array }
