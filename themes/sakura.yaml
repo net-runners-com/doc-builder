@@ -1,0 +1,9 @@
+name: Sakura
+extends: default
+colors:
+  primary: "#B0305A"
+  accent: "#D96C8E"
+  text: "#3A2A30"
+  background: "#FFF7F9"
+fonts:
+  heading: [Hiragino Mincho ProN, Noto Serif JP]

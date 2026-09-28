@@ -1,7 +1,6 @@
 import { parseArgs } from "node:util";
 import { exitCode, formatText } from "./runner/format";
 import { runAll } from "./runner/run";
-import "./setup";
 
 const { values: v, positionals } = parseArgs({
   args: process.argv.slice(2),

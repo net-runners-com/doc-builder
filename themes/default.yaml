@@ -1,0 +1,33 @@
+name: Default
+page:
+  size: A4
+  margin: { top: 25mm, bottom: 20mm, x: 20mm }
+colors:
+  primary: "#1F4E79"
+  accent: "#C45A00"
+  text: "#222222"
+  background: "#FFFFFF"
+fonts:
+  body: [Noto Sans JP, Hiragino Sans, Hiragino Kaku Gothic ProN]
+  heading: [Noto Sans JP, Hiragino Sans, Hiragino Kaku Gothic ProN]
+  mono: [JetBrains Mono, Menlo]
+cover:
+  enabled: true
+  logo: ./assets/logo.svg
+  fields: [title, version, updated, owner]
+toc:
+  enabled: true
+  depth: 2
+header:
+  left: "{{meta.title}}"
+  right: "{{meta.owner}}"
+footer:
+  center: "{{page}} / {{pages}}"
+  start_at: toc
+numbering:
+  terms: "第{n}条"
+  procedure: "手順{n}"
+  heading: "1.1"
+watermark:
+  when: "meta.version < 1.0"
+  text: DRAFT

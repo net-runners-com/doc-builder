@@ -6,7 +6,7 @@ import type { BaseCtx, Check, CheckCtx, RunOptions } from "../checks/define";
 import { cacheDir, loadConfig, type Config } from "../config";
 import { buildDoc } from "../parse/doc";
 import { loadYaml } from "../parse/yaml";
-import { fallbackTheme, type ResolvedTheme } from "../theme/types";
+import { resolveTheme } from "../theme/resolve";
 import type { CheckResult, Doc, Finding, Report } from "../types";
 
 export const PROJECT_DOC = "@themes";
@@ -33,20 +33,13 @@ async function loadUserChecks(root: string): Promise<Check[]> {
   return out;
 }
 
-export interface ThemeHooks {
-  /** 文書のテーマを解決する（Task 9 で差し替え） */
-  resolve(root: string, spec: unknown, docDir: string): ResolvedTheme;
-}
-let themeHooks: ThemeHooks = { resolve: () => fallbackTheme() };
-export const setThemeHooks = (h: ThemeHooks) => (themeHooks = h);
-
 let extraChecks: (root: string, doc: Doc) => Check[] = () => [];
 export const setExtraChecks = (f: typeof extraChecks) => (extraChecks = f);
 
 export function loadDoc(root: string, config: Config, file: string, themeOverride?: string) {
   const src = readFileSync(file, "utf8");
   const spec = themeOverride ?? loadYaml(src).data?.theme ?? config.defaultTheme;
-  const theme = themeHooks.resolve(root, spec, join(file, ".."));
+  const theme = resolveTheme(root, spec, join(file, ".."));
   const doc = buildDoc(file, src, theme.numbering);
   return { doc, theme };
 }

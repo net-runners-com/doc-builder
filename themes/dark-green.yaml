@@ -1,0 +1,7 @@
+name: DarkGreen
+extends: default
+colors:
+  primary: "#7FD1A8"
+  accent: "#F2C14E"
+  text: "#E6EFE9"
+  background: "#12241B"
