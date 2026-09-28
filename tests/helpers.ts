@@ -10,3 +10,33 @@ export const MIN = {
   proposal: `kind: proposal\n${meta("  client: C\n")}sections:\n  - id: bg\n    title: 背景\n    body: 本文\n`,
   guide: `kind: guide\n${meta()}sections:\n  - id: intro\n    title: 概要\n    body: 本文\n`,
 };
+
+import type { Check, CheckCtx } from "../src/checks/define";
+import { loadConfig } from "../src/config";
+import { buildDoc } from "../src/parse/doc";
+import { fallbackTheme } from "../src/theme/types";
+import type { Doc } from "../src/types";
+
+export const docOf = (src: string, path = "/tmp/dtr-none/doc.yaml") => {
+  const d = buildDoc(path, src, NUM);
+  if (d.buildErrors.length) throw new Error(JSON.stringify(d.buildErrors));
+  return d;
+};
+
+export function ctxFor(doc: Doc, over: Partial<CheckCtx> = {}): CheckCtx {
+  const root = "/tmp/dtr-none";
+  return {
+    root,
+    config: loadConfig(root),
+    options: {},
+    today: new Date("2026-09-28"),
+    cacheDir: "/tmp/dtr-none/cache",
+    theme: fallbackTheme(),
+    fail: (message, loc = {}) => ({ message, loc: { doc: doc.name, ...loc } }),
+    ...over,
+  };
+}
+
+export const runCheck = async (c: Check, d: Doc, over: Partial<CheckCtx> = {}) => c.run(d, ctxFor(d, over));
+export const messages = async (c: Check, d: Doc, over: Partial<CheckCtx> = {}) =>
+  (await runCheck(c, d, over)).map((f) => f.message);
