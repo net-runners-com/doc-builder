@@ -470,3 +470,39 @@ footer: [要素...]
 - Markdown: 区画を上から文字で表現（row 等の配置は無視、approval / history / meta-table は表、company は行）。header / footer は反映しない。
 - 出力先: `dist/<theme>/<layout>/<doc>.{md,pdf}`。`--layout a,b` で複数レイアウトを一括ビルド。
 - 同梱レイアウト: `simple`（表紙なし・目次なし）、`standard`（表紙＋目次、現行相当）、`formal`（ロゴ・社外秘・承認印・改訂履歴）。
+
+---
+
+## 追補 C: 表記スタイル・ハードコードなし・キャッシュなし（2026-09-28）
+
+追補 B の実装中に受けた方針を記録する。追補 B と食い違う箇所はこちらを優先する。
+
+### C.1 部品はすべてファイル
+
+- 組み込み部品もコードに持たない。`components/<名前>/component.yaml`（regions / container / props / defaults / needs）＋ `render.typ`（`#let render(props, ctx, children)`）＋任意の `md.ts`。
+- row / column / grid / box / spacer / pagebreak も同じ形式の部品。
+- 部品の既定値は `component.yaml` の `defaults`。render.typ / md.ts に値を書かない。
+- 改ページはテンプレートが自動で入れない。レイアウトで `pagebreak` を置く（表紙のみ独立ページ）。
+
+### C.2 表記スタイル（wording）
+
+- 言語切り替えではなく、書き方・表現の仕方の切り替え。番号書式（第{n}条 / STEP {n}）、固定の見出し・ラベル（目的 / 期待結果 / 目次 …）を ID で引く。
+- 定義元は `src/wording/default.json`（全キー）。プロジェクトの `wordings/<名前>.json`（`extends` 可）、文書の `strings:` で上書き。
+- 選択: 文書 `wording:` / CLI `--wording`。テーマから `numbering` を削除。
+- 検査: 未知のキー、キーごとに使える変数以外の `{x}`、必須変数（`number.*` の `{n}` 等）の欠落（`wording/valid`、文書の `strings:` は schema/valid）。
+- チェック結果のメッセージ（ツールの UI 文言）は対象外。
+
+### C.3 ハードコードなし
+
+- テーマ・レイアウト・ランナー設定のコード内既定値（FALLBACK）を廃止。`themes/default.yaml`、`layouts/*.yaml`、`src/defaults/runner.json` が唯一の定義元。
+- テーマに `typography`（本文サイズ・行送り・見出し罫・表・引用・透かし・図の幅）と `charts`（幅・高さ・フォント）を追加し、template.typ と描画処理の値をすべて移した。
+- ランナー設定に `placeholders`（text/placeholder の正規表現）、`online`（タイムアウト・UA・判定不能にするステータス）、`probe.timeoutMs`、`render.d2Pad`、`review`（タイムアウト・再試行回数・画像幅）を追加。
+- レビューの指示文は `reviews/_prompt.md` / `reviews/_images.md`。
+
+### C.4 キャッシュなし
+
+- レビュー・実機検証・出典取得は、フラグ指定時のみ毎回実行し、結果を保存・流用しない。未指定は `skipped`。
+- `fact/refs` は同じ実行の実機検証結果だけを見る（`--probe` なしは skipped）。
+- 図は毎回描画し、実行ごとの作業ディレクトリ（`.test-runner/work/run-*`、終了時に削除）に出す。
+- メモリ上のキャッシュ（部品定義・フォント一覧・スキーマ）も持たない。
+- `facts/snapshots/` は承認済みの期待出力（git 管理）でありキャッシュではない。
