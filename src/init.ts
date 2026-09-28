@@ -8,6 +8,7 @@ export const toolRoot = () => join(import.meta.dir, "..");
 /** 複製するもの: [ツール内のパス, 新しいプロジェクト内のパス] */
 export const STARTER: [string, string][] = [
   ["themes", "themes"],
+  ["palettes", "palettes"],
   ["layouts", "layouts"],
   ["components", "components"],
   ["wordings", "wordings"],

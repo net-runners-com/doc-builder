@@ -7,19 +7,24 @@ const length = { type: "string", pattern: "^\\d+(\\.\\d+)?(mm|cm|pt|in)$" };
 const obj = (required: string[], properties: Record<string, unknown>) => ({ type: "object", required, additionalProperties: false, properties });
 
 const len = { type: "string", pattern: "^-?\\d+(\\.\\d+)?(mm|cm|pt|em|%|deg)$" };
-const typographyKeys = ["base_size", "leading", "heading_rule", "heading_rule_gap", "heading_above", "heading_below", "header_size", "header_fade", "table_stroke", "table_inset", "table_line_fade", "quote_rule", "quote_inset", "quote_inset_y", "attribution_size", "watermark_size", "watermark_angle", "watermark_fade", "figure_width"];
+const typographyKeys = ["base_size", "leading", "heading_rule", "heading_rule_gap", "heading_above", "heading_below", "header_size", "table_stroke", "table_inset", "quote_rule", "quote_inset", "quote_inset_y", "attribution_size", "watermark_size", "watermark_angle", "figure_width"];
 
 const ratio = { type: "string", pattern: "^\\d+(\\.\\d+)?%$" };
-const schema = obj(["page", "colors", "fonts", "typography", "charts", "pagination"], {
+const schema = obj(["page", "palette", "fonts", "typography", "charts", "pagination"], {
   name: str,
   extends: str,
   id: str,
   errors: {},
+  colors: {},
+  series: {},
+  diagram_theme: {},
+  paletteFiles: {},
+  files: {},
   page: obj(["size", "margin"], {
     size: { enum: ["A4", "A5", "B5", "Letter"] },
     margin: obj(["top", "bottom", "x"], { top: length, bottom: length, x: length }),
   }),
-  colors: obj(["primary", "accent", "text", "background"], { primary: color, accent: color, text: color, background: color }),
+  palette: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
   fonts: obj(["body", "heading", "mono"], { body: strs, heading: strs, mono: strs }),
   typography: obj(typographyKeys, Object.fromEntries(typographyKeys.map((k) => [k, len]))),
   charts: obj(["width", "height", "font"], { width: { type: "number" }, height: { type: "number" }, font: str }),

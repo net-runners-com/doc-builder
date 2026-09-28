@@ -2,6 +2,7 @@ import { m } from "../../messages";
 import { existsSync } from "node:fs";
 import { ToolMissing, Unknown } from "../../errors";
 import { installedFonts } from "../../theme/fonts";
+import { listPalettes, resolvePalette } from "../../theme/palette";
 import { listThemes, resolveTheme } from "../../theme/resolve";
 import { defineProjectCheck } from "../define";
 
@@ -13,6 +14,8 @@ export const themeValid = defineProjectCheck({
   run(ctx) {
     const out = [];
     let fontsNote: string | undefined;
+    for (const id of listPalettes(ctx.root))
+      for (const e of resolvePalette(ctx.root, id).errors) out.push(ctx.fail(m("check.theme.error", { id: `palettes/${id}`, error: e }), { blockId: id }));
     for (const id of listThemes(ctx.root)) {
       const t = resolveTheme(ctx.root, id);
       for (const e of t.errors) out.push(ctx.fail(m("check.theme.error", { id, error: e }), { blockId: id }));
@@ -50,11 +53,11 @@ export const themeContrast = defineProjectCheck({
   severity: "warn",
   run(ctx) {
     const out = [];
-    for (const id of listThemes(ctx.root)) {
-      const t = resolveTheme(ctx.root, id);
-      if (t.errors.length) continue;
-      for (const key of ["text", "primary"] as const) {
-        const r = contrast(t.colors[key], t.colors.background);
+    for (const id of listPalettes(ctx.root)) {
+      const p = resolvePalette(ctx.root, id).palette;
+      if (!p) continue;
+      for (const key of ["text", "primary", "muted"] as const) {
+        const r = contrast(p.colors[key], p.colors.background);
         if (r < ctx.config.contrastMin) out.push(ctx.fail(m("check.theme.contrast", { id, key, ratio: r.toFixed(2), min: ctx.config.contrastMin }), { blockId: id }));
       }
     }

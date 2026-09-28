@@ -605,3 +605,13 @@ Vite の manifest と同様に、出力ファイル（dist からの相対パス
   - `layout/breaks`（error）: 分割しないはずの塊が 2 ページにまたがった、見出しがページ末に取り残された。
   - `layout/gaps`（warn）: 塊を次ページに送った結果、前ページ下部の余白が `theme.pagination.max_gap`（既定 35%）を超えた。
 - `--render` 指定時と `build`（PDF）時に実行する。
+
+---
+
+## 追補 F: 配色ファイル（2026-09-28）
+
+- 色は `palettes/<名前>.yaml` にだけ置く。トークン: background / surface / text / muted / primary / accent / border / grid / watermark、`series`（グラフの系列色）、`diagram_theme`（D2 の配色 ID）。`extends` 可（トークン単位でマージ）。
+- テーマは `palette: <名前>` で参照し、色の値を持たない。テンプレート・部品・グラフ・図はトークン名だけで色を参照する（透明度による色の生成もしない）。
+- レイアウトの `box.fill` はトークン名のみ。
+- theme/valid はパレットも検査し、theme/contrast はパレットごとに text / primary / muted と background の比を見る。
+- manifest の入力に role `palette` を追加。同梱: default / dark-green / sakura / midnight。同梱テーマ midnight とレイアウト modern を追加。

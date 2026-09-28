@@ -10,7 +10,7 @@ import { axisSummary, counts, worst } from "../runner/format";
 import type { ResolvedTheme } from "../theme/types";
 import type { Axis, CheckResult, Doc, Status } from "../types";
 
-export type Role = "source" | "theme" | "layout" | "component" | "wording" | "company" | "facts" | "snapshot" | "image" | "template" | "config";
+export type Role = "source" | "theme" | "palette" | "layout" | "component" | "wording" | "company" | "facts" | "snapshot" | "image" | "template" | "config";
 
 export interface ManifestFile {
   /** プロジェクトルートからの相対パス（ツール本体のファイルは "tool:" で始まる） */
@@ -60,6 +60,7 @@ export function collectInputs(
 ): ManifestFile[] {
   const list: [string, Role][] = [[doc.path, "source"]];
   for (const f of theme.files) list.push([f, "theme"]);
+  for (const f of theme.paletteFiles) list.push([f, "palette"]);
   list.push([theme.template ?? join(TOOL, "src", "build", "template.typ"), "template"]);
   for (const f of page.files) list.push([f, "layout"]);
   const used = usedComponents(REGIONS.flatMap((r) => page[r]));

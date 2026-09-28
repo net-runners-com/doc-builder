@@ -1,0 +1,13 @@
+name: Default
+colors:
+  background: "#FFFFFF"
+  surface: "#EEF2F7"
+  text: "#222222"
+  muted: "#6B7280"
+  primary: "#1F4E79"
+  accent: "#C45A00"
+  border: "#C9CED6"
+  grid: "#E3E6EA"
+  watermark: "#EFEFEF"
+series: ["#1F4E79", "#C45A00", "#4F8A3C", "#8A5CA8"]
+diagram_theme: 0

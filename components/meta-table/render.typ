@@ -1,6 +1,6 @@
 #let render(props, ctx, children) = {
   let fields = props.fields
-  let muted = rgb(ctx.theme.colors.text).transparentize(eval(props.label_fade))
+  let muted = rgb(ctx.theme.colors.muted)
   grid(
     columns: 2,
     column-gutter: eval(props.column_gap),

@@ -1,0 +1,7 @@
+name: Midnight
+extends: default
+palette: midnight
+fonts:
+  heading: [Hiragino Sans, Noto Sans JP]
+typography:
+  heading_rule: 0.6pt

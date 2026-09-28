@@ -111,7 +111,7 @@ export function emitTypst(l: Content, theme: ResolvedTheme, doc: Doc, work: stri
   };
   copyFileSync(theme.template ?? join(import.meta.dir, "template.typ"), join(work, "template.typ"));
   const meta = doc.data.meta;
-  const themeJson = { ...theme, paper: PAPER[theme.page.size], margin: theme.page.margin, fonts: availableFonts(theme.fonts) };
+  const themeJson = { ...theme, paper: PAPER[theme.page.size], margin: theme.page.margin, fonts: availableFonts(theme.fonts), colors: theme.colors };
   writeFileSync(join(work, "theme.json"), JSON.stringify(themeJson, null, 2));
   // 部品に渡す ctx（画像はルート相対パス "/assets/..." にする。Typst は --root 基準で解決する）
   const company = p.company ? { ...p.company, logo: p.company.logo && existsSync(p.company.logo) ? "/" + asset(p.company.logo, "_company-logo") : null } : null;

@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { parse } from "yaml";
 import { validateTheme } from "../schema/theme";
+import { resolvePalette } from "./palette";
 import type { ResolvedTheme, Theme } from "./types";
 
 type Partial = Record<string, any>;
@@ -78,10 +79,19 @@ export function resolveTheme(root: string, spec: unknown, docDir?: string): Reso
   }
   delete merged.extends;
   errors.push(...validateTheme(merged));
-  if (errors.length) {
-    return { ...(merged as Theme), id, errors, files: themeFiles(root, seen) };
-  }
-  return { ...(merged as Theme), id, errors, files: themeFiles(root, seen) };
+  const pal = typeof merged.palette === "string" ? resolvePalette(root, merged.palette) : { errors: [], files: [] as string[] };
+  errors.push(...pal.errors.map((e) => m("theme.palette", { error: e })));
+  const p = pal.palette;
+  return {
+    ...(merged as Theme),
+    id,
+    errors,
+    files: themeFiles(root, seen),
+    paletteFiles: pal.files,
+    colors: (p?.colors ?? {}) as ResolvedTheme["colors"],
+    series: p?.series ?? [],
+    diagram_theme: p?.diagram_theme ?? 0,
+  };
 }
 
 /** 解決チェーンのファイル（default を含む、親から順） */

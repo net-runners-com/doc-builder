@@ -1,8 +1,11 @@
+import type { ColorToken } from "./palette";
+
 export interface Theme {
   name?: string;
   extends?: string;
   page: { size: "A4" | "A5" | "B5" | "Letter"; margin: { top: string; bottom: string; x: string } };
-  colors: { primary: string; accent: string; text: string; background: string };
+  /** 配色ファイル（palettes/<name>.yaml）の名前 */
+  palette: string;
   fonts: { body: string[]; heading: string[]; mono: string[] };
   typography: {
     base_size: string;
@@ -12,17 +15,14 @@ export interface Theme {
     heading_above: string;
     heading_below: string;
     header_size: string;
-    header_fade: string;
     table_stroke: string;
     table_inset: string;
-    table_line_fade: string;
     quote_rule: string;
     quote_inset: string;
     quote_inset_y: string;
     attribution_size: string;
     watermark_size: string;
     watermark_angle: string;
-    watermark_fade: string;
     figure_width: string;
   };
   charts: { width: number; height: number; font: string };
@@ -34,6 +34,12 @@ export interface Theme {
 export interface ResolvedTheme extends Theme {
   id: string;
   errors: string[];
+  /** 解決したパレット（palette の中身）。色はここのトークンだけから参照する */
+  colors: Record<ColorToken, string>;
+  series: string[];
+  diagram_theme: number;
+  /** パレットの解決に使ったファイル */
+  paletteFiles: string[];
   /** 解決に使ったファイル（継承の親から順） */
   files: string[];
 }

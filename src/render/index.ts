@@ -12,15 +12,15 @@ const hash = (s: string) => createHash("sha1").update(s).digest("hex").slice(0, 
 
 export class RenderError extends Error {}
 
-export async function renderD2(source: string, workDir: string, pad: number): Promise<string> {
+export async function renderD2(source: string, workDir: string, pad: number, theme = 0): Promise<string> {
   const d2 = requireTool("d2", "brew install d2");
   const dir = join(workDir, "render");
   mkdirSync(dir, { recursive: true });
-  const h = hash(`${pad}:${source}`);
+  const h = hash(`${pad}:${theme}:${source}`);
   const out = join(dir, `${h}.svg`);
   const input = join(dir, `${h}.d2`);
   writeFileSync(input, source);
-  const p = Bun.spawnSync([d2, "--pad", String(pad), input, out], { stderr: "pipe", stdout: "pipe" });
+  const p = Bun.spawnSync([d2, "--pad", String(pad), "--theme", String(theme), input, out], { stderr: "pipe", stdout: "pipe" });
   if (p.exitCode !== 0) throw new RenderError(`D2: ${p.stderr.toString().trim().split("\n").slice(-3).join(" ")}`);
   return out;
 }
@@ -58,6 +58,11 @@ export interface ChartStyle {
   width: number;
   height: number;
   font: string;
+  /** パレットのトークン */
+  text: string;
+  background: string;
+  border: string;
+  grid: string;
   /** 凡例と値軸の見出し（表記スタイル chart.series / chart.value） */
   series: string;
   value: string;
@@ -65,7 +70,14 @@ export interface ChartStyle {
 
 export function chartSpec(fig: ChartFigure, t: Table, style: ChartStyle): object {
   const values = t.rows.map((r) => Object.fromEntries(t.columns.map((c, i) => [c, r[i]])));
-  const base = { $schema: "https://vega.github.io/schema/vega-lite/v6.json", data: { values }, width: style.width, height: style.height, config: { font: style.font, range: { category: style.colors } } };
+  const base = { $schema: "https://vega.github.io/schema/vega-lite/v6.json", data: { values }, width: style.width, height: style.height, config: {
+      font: style.font,
+      background: style.background,
+      axis: { labelColor: style.text, titleColor: style.text, domainColor: style.border, tickColor: style.border, gridColor: style.grid },
+      legend: { labelColor: style.text, titleColor: style.text },
+      range: { category: style.colors },
+    },
+  };
   if (fig.chart === "pie")
     return { ...base, mark: "arc", encoding: { theta: { field: fig.y[0], type: "quantitative" }, color: { field: fig.x, type: "nominal" } } };
   const enc = {
@@ -97,16 +109,27 @@ export async function renderChart(doc: Doc, fig: ChartFigure, workDir: string, s
 export interface RenderOptions {
   chart: ChartStyle;
   d2Pad: number;
+  d2Theme: number;
 }
 
 /** テーマと設定から描画オプションを作る */
 export const renderOptions = (
-  theme: { colors: { primary: string; accent: string }; charts: { width: number; height: number; font: string } },
+  theme: { colors: { text: string; background: string; border: string; grid: string }; series: string[]; charts: { width: number; height: number; font: string }; diagram_theme: number },
   cfg: { render: { d2Pad: number } },
   strings: Record<string, string>,
 ): RenderOptions => ({
-  chart: { colors: [theme.colors.primary, theme.colors.accent], ...theme.charts, series: strings["chart.series"], value: strings["chart.value"] },
+  chart: {
+    colors: theme.series,
+    ...theme.charts,
+    series: strings["chart.series"],
+    value: strings["chart.value"],
+    text: theme.colors.text,
+    background: theme.colors.background,
+    border: theme.colors.border,
+    grid: theme.colors.grid,
+  },
   d2Pad: cfg.render.d2Pad,
+  d2Theme: theme.diagram_theme,
 });
 
 /** 手順の定義から D2 のフロー図を作る（type: flow） */
@@ -126,8 +149,8 @@ export async function renderFigures(doc: Doc, workDir: string, o: RenderOptions)
   for (const f of doc.data.figures ?? []) {
     try {
       svgs[f.id] =
-        f.type === "diagram" ? await renderD2(f.source, workDir, o.d2Pad)
-        : f.type === "flow" ? await renderD2(flowD2(doc), workDir, o.d2Pad)
+        f.type === "diagram" ? await renderD2(f.source, workDir, o.d2Pad, o.d2Theme)
+        : f.type === "flow" ? await renderD2(flowD2(doc), workDir, o.d2Pad, o.d2Theme)
         : await renderChart(doc, f, workDir, o.chart);
     } catch (e) {
       errors.push({ id: f.id, error: e as Error });

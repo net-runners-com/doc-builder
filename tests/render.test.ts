@@ -21,6 +21,7 @@ const doc = (figs: string) =>
 const ok = '  - { id: flow, type: diagram, caption: c, source: "a -> b" }\n  - { id: chart, type: chart, caption: c, chart: bar, data: "{{ref:effects}}", x: 項目, y: [現状, 導入後] }\n';
 
 test("D2 と Vega-Lite を SVG に描画する", async () => {
+  // テーマの配色（文字色・背景色・D2 テーマ）を使う
   const { svgs, errors } = await renderFigures(doc(ok), workDir, renderOptions(resolveTheme(REPO, "default"), loadConfig(REPO), defaultStrings()));
   expect(errors).toEqual([]);
   expect(readFileSync(svgs.flow, "utf8")).toContain("<svg");

@@ -1,0 +1,13 @@
+name: DarkGreen
+colors:
+  background: "#12241B"
+  surface: "#1B3326"
+  text: "#E6EFE9"
+  muted: "#9FB5A7"
+  primary: "#7FD1A8"
+  accent: "#F2C14E"
+  border: "#3C5A49"
+  grid: "#23392D"
+  watermark: "#1C3025"
+series: ["#7FD1A8", "#F2C14E", "#8EC5FF", "#F28B82"]
+diagram_theme: 200

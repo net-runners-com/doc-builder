@@ -50,7 +50,7 @@ export const messages = async (c: Check, d: Doc, over: Partial<CheckCtx> = {}) =
 import { cpSync } from "node:fs";
 /** 一時プロジェクトに定義ファイル（テーマ・レイアウト・部品・レビュー指示文）を用意する */
 export function scaffold(root: string) {
-  for (const d of ["themes", "layouts", "components"]) cpSync(join(REPO, d), join(root, d), { recursive: true });
+  for (const d of ["themes", "palettes", "layouts", "components"]) cpSync(join(REPO, d), join(root, d), { recursive: true });
   cpSync(join(REPO, "reviews", "_prompt.md"), join(root, "reviews", "_prompt.md"));
   cpSync(join(REPO, "reviews", "_images.md"), join(root, "reviews", "_images.md"));
 }

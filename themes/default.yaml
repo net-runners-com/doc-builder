@@ -2,11 +2,7 @@ name: Default
 page:
   size: A4
   margin: { top: 25mm, bottom: 20mm, x: 20mm }
-colors:
-  primary: "#1F4E79"
-  accent: "#C45A00"
-  text: "#222222"
-  background: "#FFFFFF"
+palette: default
 fonts:
   body: [Noto Sans JP, Hiragino Sans, Hiragino Kaku Gothic ProN]
   heading: [Noto Sans JP, Hiragino Sans, Hiragino Kaku Gothic ProN]
@@ -22,17 +18,14 @@ typography:
   heading_above: 1.6em
   heading_below: 0.9em
   header_size: 8pt
-  header_fade: 30%
   table_stroke: 0.5pt
   table_inset: 6pt
-  table_line_fade: 60%
   quote_rule: 2pt
   quote_inset: 10pt
   quote_inset_y: 4pt
   attribution_size: 9pt
   watermark_size: 90pt
   watermark_angle: -40deg
-  watermark_fade: 90%
   figure_width: 80%
 charts:
   width: 420

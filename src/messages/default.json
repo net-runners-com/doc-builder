@@ -149,7 +149,7 @@
   "check.theme.template-missing": "{id}: テンプレートが存在しません: {path}",
   "check.theme.font-missing": "{id}: fonts.{role} のいずれもインストールされていません: {fonts}",
   "check.theme.font-unknown": "フォント未確認: {note}",
-  "check.theme.contrast": "{id}: colors.{key} と background のコントラスト比 {ratio}（基準 {min} 未満）",
+  "check.theme.contrast": "{id}: {key} と background のコントラスト比 {ratio}（基準 {min} 未満）",
   "check.online.fetch-failed": "{url}: 取得失敗 ({error})",
   "check.online.blocked": "{url}: HTTP {status}（遮断の可能性）",
   "check.online.url-status": "出典 URL が HTTP {status}: {url}",
@@ -194,5 +194,7 @@
   "kind.code": "コード",
   "check.pagination.split": "{kind}「{id}」がページ {page} から次のページにまたがっています",
   "check.pagination.orphan-heading": "見出し「{id}」がページ {page} の末尾に取り残されています",
-  "check.pagination.gap": "{kind}「{id}」を次のページに送ったため、ページ {page} の下部に {ratio}% の余白があります"
+  "check.pagination.gap": "{kind}「{id}」を次のページに送ったため、ページ {page} の下部に {ratio}% の余白があります",
+  "palette.not-found": "パレット \"{id}\" が見つかりません（{path}）",
+  "theme.palette": "パレット: {error}"
 }

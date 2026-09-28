@@ -53,7 +53,8 @@ bun test                                # ランナー自体のテスト
 
 | 軸 | ファイル | 中身 | 指定 |
 |----|---------|------|------|
-| テーマ | `themes/*.yaml` | 色・フォント・用紙・文字組み・透かし | 文書 `theme:` / `--theme` |
+| テーマ | `themes/*.yaml` | パレット名・フォント・用紙・文字組み・改ページ・透かし | 文書 `theme:` / `--theme` |
+| 配色 | `palettes/*.yaml` | 色のトークン（background / surface / text / muted / primary / accent / border / grid / watermark）・グラフの系列色・図の配色 | テーマの `palette:` |
 | レイアウト | `layouts/*.yaml` | 部品の配置（表紙・前付け・後付け・ヘッダー・フッター） | 文書 `layout:` / `--layout` |
 | 表記スタイル | `wordings/*.json` | 番号書式・固定の見出しやラベルの言い回し（ID で参照） | 文書 `wording:` / `--wording`、部分上書きは文書 `strings:` |
 

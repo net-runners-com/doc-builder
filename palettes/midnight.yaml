@@ -1,0 +1,13 @@
+name: Midnight
+colors:
+  background: "#0F172A"
+  surface: "#1E293B"
+  text: "#E2E8F0"
+  muted: "#94A3B8"
+  primary: "#7DD3FC"
+  accent: "#F472B6"
+  border: "#334155"
+  grid: "#1F2A3D"
+  watermark: "#16213A"
+series: ["#7DD3FC", "#F472B6", "#A3E635", "#FBBF24"]
+diagram_theme: 200

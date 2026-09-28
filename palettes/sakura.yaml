@@ -1,0 +1,13 @@
+name: Sakura
+colors:
+  background: "#FFF7F9"
+  surface: "#FBE7ED"
+  text: "#3A2A30"
+  muted: "#76595F"
+  primary: "#B0305A"
+  accent: "#D96C8E"
+  border: "#E7C6D1"
+  grid: "#F3DCE3"
+  watermark: "#F6E3E9"
+series: ["#B0305A", "#D96C8E", "#7A9E7E", "#8C6BB1"]
+diagram_theme: 0

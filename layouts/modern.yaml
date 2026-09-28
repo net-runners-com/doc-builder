@@ -1,0 +1,35 @@
+name: モダン
+page_numbers: { start_at: front }
+cover:
+  - row:
+      justify: space-between
+      children:
+        - company-mini
+        - confidential: { text: 社外秘 }
+  - spacer: 26%
+  - box:
+      fill: surface
+      padding: 18pt
+      width: 100%
+      children:
+        - text: { value: "{{meta.client}}", size: 10pt }
+        - spacer: 4mm
+        - title: { size: 30pt }
+  - spacer: 10mm
+  - meta-table: { fields: [number, version, updated, owner] }
+  - spacer: fill
+  - row:
+      justify: end
+      children:
+        - approval: { roles: [承認, 確認, 作成], cell_width: 20mm }
+front:
+  - toc: { depth: 1, title: Contents }
+  - pagebreak
+header:
+  - row:
+      justify: space-between
+      children:
+        - text: { value: "{{meta.title}}", size: 8pt }
+        - confidential: { text: 社外秘, size: 7pt }
+footer:
+  - row: { justify: end, children: [{ page-number: { format: "{page}" } }] }
