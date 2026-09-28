@@ -3,12 +3,7 @@ import type { Registry } from "./components";
 import { REGIONS, type LNode, type Region } from "./types";
 
 const ajv = new Ajv({ allErrors: true, strict: false });
-const cache = new WeakMap<object, ReturnType<typeof ajv.compile>>();
-const compile = (schema: object) => {
-  let v = cache.get(schema);
-  if (!v) cache.set(schema, (v = ajv.compile(schema)));
-  return v;
-};
+const compile = (schema: object) => ajv.compile(schema);
 
 export interface LayoutError {
   ptr: string;

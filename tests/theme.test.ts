@@ -16,7 +16,8 @@ const ctx = () => ({
   config: loadConfig(root),
   options: {},
   today: new Date("2026-09-28"),
-  cacheDir: join(root, ".cache"),
+  workDir: join(root, ".work"),
+  probes: new Map(),
   fail: (message: string, loc = {}) => ({ message, loc: { doc: "@themes", ...loc } }),
 });
 

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as vega from "vega";
 import * as vl from "vega-lite";
@@ -10,13 +10,12 @@ const hash = (s: string) => createHash("sha1").update(s).digest("hex").slice(0, 
 
 export class RenderError extends Error {}
 
-export async function renderD2(source: string, cacheDir: string, pad: number): Promise<string> {
+export async function renderD2(source: string, workDir: string, pad: number): Promise<string> {
   const d2 = requireTool("d2", "brew install d2");
-  const dir = join(cacheDir, "render");
+  const dir = join(workDir, "render");
   mkdirSync(dir, { recursive: true });
   const h = hash(`${pad}:${source}`);
   const out = join(dir, `${h}.svg`);
-  if (existsSync(out)) return out;
   const input = join(dir, `${h}.d2`);
   writeFileSync(input, source);
   const p = Bun.spawnSync([d2, "--pad", String(pad), input, out], { stderr: "pipe", stdout: "pipe" });
@@ -77,13 +76,12 @@ export function chartSpec(fig: ChartFigure, t: Table, style: ChartStyle): object
   };
 }
 
-export async function renderChart(doc: Doc, fig: ChartFigure, cacheDir: string, style: ChartStyle): Promise<string> {
+export async function renderChart(doc: Doc, fig: ChartFigure, workDir: string, style: ChartStyle): Promise<string> {
   const t = chartTable(doc, fig);
   const spec = chartSpec(fig, t, style);
-  const dir = join(cacheDir, "render");
+  const dir = join(workDir, "render");
   mkdirSync(dir, { recursive: true });
   const out = join(dir, `${hash(JSON.stringify(spec))}.svg`);
-  if (existsSync(out)) return out;
   const view = new vega.View(vega.parse(vl.compile(spec as any).spec), { renderer: "none" });
   writeFileSync(out, await view.toSVG());
   view.finalize();
@@ -102,12 +100,13 @@ export const renderOptions = (theme: { colors: { primary: string; accent: string
   d2Pad: cfg.render.d2Pad,
 });
 
-export async function renderFigures(doc: Doc, cacheDir: string, o: RenderOptions) {
+/** 図を毎回描画する（再利用しない）。出力先は呼び出し側の作業ディレクトリ */
+export async function renderFigures(doc: Doc, workDir: string, o: RenderOptions) {
   const svgs: Record<string, string> = {};
   const errors: { id: string; error: Error }[] = [];
   for (const f of doc.data.figures ?? []) {
     try {
-      svgs[f.id] = f.type === "diagram" ? await renderD2(f.source, cacheDir, o.d2Pad) : await renderChart(doc, f, cacheDir, o.chart);
+      svgs[f.id] = f.type === "diagram" ? await renderD2(f.source, workDir, o.d2Pad) : await renderChart(doc, f, workDir, o.chart);
     } catch (e) {
       errors.push({ id: f.id, error: e as Error });
     }

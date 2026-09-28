@@ -1,5 +1,3 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { Skip, Unknown } from "../../errors";
 import { loadFacts, readSnapshot } from "../../facts/load";
 import { probe, type ProbeResult } from "../../facts/probe";
@@ -9,11 +7,6 @@ import { defineCheck, defineProjectCheck, type BaseCtx, type ProjectCheck } from
 
 export const FACTS_DOC = "@facts";
 
-const cacheFile = (ctx: { cacheDir: string }, id: string) => join(ctx.cacheDir, "probe", `${id}.json`);
-export const lastProbe = (ctx: { cacheDir: string }, id: string): ProbeResult | undefined => {
-  const p = cacheFile(ctx, id);
-  return existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : undefined;
-};
 
 export const factsValid = defineProjectCheck({
   id: "facts/valid",
@@ -30,16 +23,10 @@ export function probeCheck(f: Fact): ProjectCheck {
     group: "probe",
     severity: "error",
     async run(ctx: BaseCtx) {
-      let r: ProbeResult | undefined;
-      let fresh = false;
-      if (ctx.options.probe) {
-        r = await probe(f, { root: ctx.root, timeoutMs: ctx.config.probe.timeoutMs, updateSnapshots: ctx.options.updateSnapshots, snapshot: readSnapshot(ctx.root, f.id) });
-        mkdirSync(join(ctx.cacheDir, "probe"), { recursive: true });
-        writeFileSync(cacheFile(ctx, f.id), JSON.stringify(r));
-        fresh = true;
-      } else r = lastProbe(ctx, f.id);
-      if (!r) throw new Skip("未実行（--probe で実行）");
-      const note = `${fresh ? "" : "前回 "}${when(r)}${r.ms ? ` ${r.ms}ms` : ""}`;
+      if (!ctx.options.probe) throw new Skip("未実行（--probe で実行）");
+      const r = await probe(f, { root: ctx.root, timeoutMs: ctx.config.probe.timeoutMs, updateSnapshots: ctx.options.updateSnapshots, snapshot: readSnapshot(ctx.root, f.id) });
+      ctx.probes.set(f.id, r);
+      const note = `${when(r)}${r.ms ? ` ${r.ms}ms` : ""}`;
       const loc = { blockId: f.id, line: f.origin === "facts.yaml" ? f.line : undefined };
       const head = `${f.origin === "facts.yaml" ? "" : `[${f.origin}] `}${factText(f)}`;
       if (r.status === "unknown") throw new Unknown(`${r.messages.join(" / ")}（${note}）`);
@@ -61,9 +48,10 @@ export const factRefs = defineCheck({
   kinds: ["*"],
   severity: "error",
   run(doc, ctx) {
+    if (!ctx.options.probe) throw new Skip("未実行（--probe で実行）");
     const out = [];
     for (const id of doc.factRefs) {
-      const r = lastProbe(ctx, id);
+      const r = ctx.probes.get(id);
       if (r?.status !== "fail") continue;
       const t = doc.texts.find((t) => t.raw.includes(`fact:${id}`) || t.raw.includes(`capture:${id}`));
       out.push(ctx.fail(`fact "${id}" が実機と一致しません（${r.host} ${r.at.slice(0, 10)}）: ${r.messages[0].split("\n")[0]}`, { blockId: t?.blockId, line: t?.line }));

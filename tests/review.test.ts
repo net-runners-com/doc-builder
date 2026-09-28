@@ -23,11 +23,11 @@ test("parseReviewOutput: structured_output と result 内 JSON", () => {
   expect(() => parseReviewOutput(JSON.stringify({ result: "no json" }))).toThrow();
 });
 
-test("--review なし・キャッシュなしは skipped", async () => {
+test("--review なしは skipped", async () => {
   expect(review(await runAll(root)).status).toBe("skipped");
 });
 
-test("不正出力は 1 回再試行し、成功結果はキャッシュされる", async () => {
+test("不正出力は 1 回再試行する。結果は保存せず、--review なしでは未実行", async () => {
   let calls = 0;
   const claude: ClaudeRunner = async ({ prompt }) => {
     calls++;
@@ -39,8 +39,7 @@ test("不正出力は 1 回再試行し、成功結果はキャッシュされ�
   expect(calls).toBe(2);
   expect(r.status).toBe("fail");
   expect(r.findings[0]).toMatchObject({ message: "曖昧", loc: { blockId: "intro", line: 8 } });
-  // キャッシュ: --review なしでも前回結果を表示
-  expect(review(await runAll(root)).status).toBe("fail");
+  expect(review(await runAll(root)).status).toBe("skipped");
 });
 
 test("2 回とも不正なら unknown", async () => {

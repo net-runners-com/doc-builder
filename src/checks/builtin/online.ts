@@ -1,6 +1,3 @@
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { Skip, Unknown } from "../../errors";
 import type { Finding } from "../../types";
 import { defineCheck, type CheckCtx } from "../define";
@@ -11,16 +8,10 @@ export interface Fetched {
   fetchedAt: string;
 }
 
-export async function fetchCached(url: string, ctx: CheckCtx): Promise<Fetched | null> {
-  const dir = join(ctx.cacheDir, "http");
-  const file = join(dir, createHash("sha1").update(url).digest("hex") + ".json");
-  if (!ctx.options.online) return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : null;
+export async function fetchPage(url: string, ctx: CheckCtx): Promise<Fetched> {
   try {
     const res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(ctx.config.online.timeoutMs), headers: { "user-agent": ctx.config.online.userAgent } });
-    const f: Fetched = { status: res.status, text: await res.text(), fetchedAt: new Date().toISOString() };
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(file, JSON.stringify(f));
-    return f;
+    return { status: res.status, text: await res.text(), fetchedAt: new Date().toISOString() };
   } catch (e) {
     return { status: 0, text: String((e as Error).message), fetchedAt: new Date().toISOString() };
   }
@@ -46,13 +37,12 @@ async function perSource(
   ctx: CheckCtx,
   items: { url: string; judge: (f: Fetched) => Finding | "ok" }[],
 ): Promise<Finding[]> {
+  if (!ctx.options.online) throw new Skip("未実行（--online で実行）");
   const out: Finding[] = [];
   const unknown: string[] = [];
-  let skipped = 0;
   for (const it of items) {
-    const f = await fetchCached(it.url, ctx);
-    if (!f) skipped++;
-    else if (f.status === 0) unknown.push(`${it.url}: 取得失敗 (${f.text})`);
+    const f = await fetchPage(it.url, ctx);
+    if (f.status === 0) unknown.push(`${it.url}: 取得失敗 (${f.text})`);
     else if (ctx.config.online.blockedStatuses.includes(f.status)) unknown.push(`${it.url}: HTTP ${f.status}（遮断の可能性）`);
     else {
       const r = it.judge(f);
@@ -61,7 +51,6 @@ async function perSource(
   }
   if (out.length) return out;
   if (unknown.length) throw new Unknown(unknown.join(" / "));
-  if (skipped) throw new Skip("キャッシュなし（--online で取得）");
   return out;
 }
 

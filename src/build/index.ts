@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { cacheDir, loadConfig } from "../config";
+import { loadConfig } from "../config";
 import { ToolMissing } from "../errors";
 import { renderFigures, renderOptions } from "../render";
 import { discover, loadDoc } from "../runner/run";
@@ -19,7 +19,7 @@ export interface BuildResult {
 
 export async function buildAll(
   root: string,
-  opts: { paths?: string[]; themes?: string[]; layouts?: string[]; formats?: ("md" | "pdf")[] } = {},
+  opts: { paths?: string[]; themes?: string[]; layouts?: string[]; wording?: string; formats?: ("md" | "pdf")[] } = {},
 ): Promise<BuildResult> {
   const config = loadConfig(root);
   const res: BuildResult = { outputs: [], warnings: [], errors: [] };
@@ -28,7 +28,7 @@ export async function buildAll(
   for (const file of discover(root, config, opts.paths)) {
     for (const themeName of opts.themes ?? [undefined])
     for (const layoutName of opts.layouts ?? [undefined]) {
-      const { doc, theme, layout: page } = loadDoc(root, config, file, { theme: themeName, layout: layoutName });
+      const { doc, theme, layout: page } = loadDoc(root, config, file, { theme: themeName, layout: layoutName, wording: opts.wording });
       const outDir = join(root, "dist", theme.id, page.id);
       if (doc.buildErrors.length) {
         res.errors.push(`${doc.name}: ビルドエラー ${doc.buildErrors.length} 件のため出力しません（bun run test で確認）`);
@@ -38,7 +38,7 @@ export async function buildAll(
       if (page.errors.length) res.warnings.push(`${doc.name}: レイアウト "${page.id}" にエラーがあります: ${page.errors[0]}`);
       const reg = registry(root);
       const company = loadCompany(root).company;
-      const { svgs, errors } = await renderFigures(doc, cacheDir(root), renderOptions(theme, config));
+      const { svgs, errors } = await renderFigures(doc, join(root, ".test-runner", "build", theme.id, page.id, doc.name + ".render"), renderOptions(theme, config));
       if (errors.length) {
         res.errors.push(...errors.map((e) => `${doc.name}: 図 "${e.id}": ${e.error.message}`));
         continue;

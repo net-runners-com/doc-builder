@@ -6,7 +6,8 @@ import { kindChecks } from "./kinds";
 import { figureRender } from "./figure";
 import { onlineChecks } from "./online";
 import { factRefs } from "./facts";
+import { approvalComplete, layoutData, layoutValid, wordingValid } from "./layout";
 import { themeContrast, themeValid } from "./theme";
 
-export const builtinChecks: Check[] = [...schemaChecks, ...textChecks, ...defChecks, ...kindChecks, figureRender, factRefs, ...onlineChecks];
-export const projectChecks: ProjectCheck[] = [themeValid, themeContrast];
+export const builtinChecks: Check[] = [...schemaChecks, ...textChecks, ...defChecks, ...kindChecks, figureRender, factRefs, layoutData, approvalComplete, ...onlineChecks];
+export const projectChecks: ProjectCheck[] = [themeValid, themeContrast, layoutValid, wordingValid];

@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import type { ProbeResult } from "../facts/probe";
 import { join, relative, resolve } from "node:path";
 import { builtinChecks, projectChecks } from "../checks/builtin";
 import { Skip, Unknown } from "../errors";
@@ -6,7 +7,7 @@ import { FACTS_DOC, factsValid, probeCheck, probeTargets, unusedFacts } from "..
 import type { BaseCtx, Check, CheckCtx, CheckOutput, ProjectCheck, RunOptions } from "../checks/define";
 import { loadFacts } from "../facts/load";
 import type { Fact } from "../facts/types";
-import { cacheDir, loadConfig, type Config } from "../config";
+import { loadConfig, workRoot, type Config } from "../config";
 import { buildDoc } from "../parse/doc";
 import { loadYaml } from "../parse/yaml";
 import { reviewChecks } from "../review/checks";
@@ -77,12 +78,17 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
   const today = options.today ?? new Date();
   const userChecks = await loadUserChecks(root);
   const results: CheckResult[] = [];
+  mkdirSync(workRoot(root), { recursive: true });
+  const workDir = mkdtempSync(join(workRoot(root), "run-"));
+  const probes = new Map<string, ProbeResult>();
+  try {
   const base = (doc: string): BaseCtx => ({
     root,
     config,
     options,
     today,
-    cacheDir: cacheDir(root),
+    workDir,
+    probes,
     fail: (message, loc = {}) => ({ message, loc: { doc, ...loc } }),
   });
   const project = async (doc: string, checks: ProjectCheck[]) => {
@@ -116,6 +122,9 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
   }
   if (!options.paths?.length) await project(FACTS_DOC, [unusedFacts(docs)]);
   return { startedAt, finishedAt: new Date().toISOString(), docs: docs.map((d) => d.name), results };
+  } finally {
+    rmSync(workDir, { recursive: true, force: true });
+  }
 }
 
 export const relPath = (root: string, p: string) => relative(root, p);

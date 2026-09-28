@@ -81,10 +81,10 @@ test("--probe: 実機と不一致の fact と、それを参照する文書が�
   );
   expect(get(r, "@facts", "probe/index-log")!.status).toBe("unknown");
   expect(get(r, "manual", "fact/refs")!.findings.map((f) => f.message.split("（")[0])).toEqual(['fact "ssh-key-only" が実機と一致しません']);
-  // --probe なしでは前回結果を表示
+  // --probe なしでは前回結果を使わない
   const again = await runAll(root);
-  expect(get(again, "@facts", "probe/ssh-key-only")!.note).toStartWith("前回 ");
-  expect(get(again, "manual", "fact/refs")!.status).toBe("fail");
+  expect(get(again, "@facts", "probe/ssh-key-only")!.status).toBe("skipped");
+  expect(get(again, "manual", "fact/refs")!.status).toBe("skipped");
 });
 
 test("capture: スナップショットの取得・一致・不一致", async () => {

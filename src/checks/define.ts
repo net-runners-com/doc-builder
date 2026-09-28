@@ -1,4 +1,5 @@
 import type { Config } from "../config";
+import type { ProbeResult } from "../facts/probe";
 import type { ClaudeRunner } from "../review/claude";
 import type { ResolvedLayout } from "../page/types";
 import type { ResolvedTheme } from "../theme/types";
@@ -22,7 +23,10 @@ export interface BaseCtx {
   config: Config;
   options: RunOptions;
   today: Date;
-  cacheDir: string;
+  /** この実行専用の作業ディレクトリ（終了時に削除） */
+  workDir: string;
+  /** この実行の実機検証結果（fact ID → 結果）。ディスクには保存しない */
+  probes: Map<string, ProbeResult>;
   fail(message: string, loc?: Omit<Loc, "doc">): Finding;
 }
 export interface CheckCtx extends BaseCtx {

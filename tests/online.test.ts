@@ -7,7 +7,7 @@ import { MIN, ctxFor, docOf } from "./helpers";
 import type { Check } from "../src/checks/define";
 
 let server: ReturnType<typeof Bun.serve>;
-const cacheDir = mkdtempSync(join(tmpdir(), "dtr-online-"));
+const workDir = mkdtempSync(join(tmpdir(), "dtr-online-"));
 beforeAll(() => {
   server = Bun.serve({
     port: 0,
@@ -21,7 +21,7 @@ beforeAll(() => {
 });
 afterAll(() => {
   server.stop(true);
-  rmSync(cacheDir, { recursive: true, force: true });
+  rmSync(workDir, { recursive: true, force: true });
 });
 
 const doc = (path: string, quote: string) =>
@@ -31,22 +31,21 @@ const doc = (path: string, quote: string) =>
   );
 const run = async (c: Check, d: ReturnType<typeof doc>, online: boolean) => {
   try {
-    const f = await c.run(d, ctxFor(d, { cacheDir, options: { online } }));
+    const f = await c.run(d, ctxFor(d, { workDir, options: { online } }));
     return f.length ? `fail: ${f[0].message}` : "pass";
   } catch (e) {
     return `${(e as Error).constructor.name}: ${(e as Error).message}`;
   }
 };
 
-test("--online なしでキャッシュが無ければ Skip", async () => {
+test("--online なしは Skip（前回結果も使わない）", async () => {
   expect(await run(onlineUrl, doc("/ok", "x"), false)).toStartWith("Skip");
 });
 
 test("引用の照合は空白・全半角を正規化する", async () => {
   expect(await run(onlineQuote, doc("/ok", "資料の検索に費やす時間は一日平均30分であった。"), true)).toBe("pass");
   expect(await run(onlineQuote, doc("/ok", "一日平均60分"), true)).toStartWith("fail: 引用文が");
-  // 取得済みならオフラインでもキャッシュで判定
-  expect(await run(onlineUrl, doc("/ok", "x"), false)).toBe("pass");
+  expect(await run(onlineUrl, doc("/ok", "x"), false)).toStartWith("Skip");
 });
 
 test("404 は fail、403 は unknown", async () => {

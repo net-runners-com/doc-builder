@@ -84,13 +84,7 @@ export function loadComponents(root: string): { defs: Registry; errors: string[]
   return { defs, errors };
 }
 
-const cache = new Map<string, Registry>();
-export function registry(root: string): Registry {
-  if (!cache.has(root)) cache.set(root, loadComponents(root).defs);
-  return cache.get(root)!;
-}
-/** テスト・watch 用 */
-export const clearRegistryCache = () => cache.clear();
+export const registry = (root: string): Registry => loadComponents(root).defs;
 
 /** 既定値を合成した設定（オブジェクトはマージ、スカラーは未指定なら既定値） */
 export function withDefaults(def: ComponentDef, props: unknown): unknown {

@@ -35,8 +35,8 @@ export function buildPrompt(root: string, doc: Doc, a: Aspect, images: string[])
 }
 
 async function figurePngs(doc: Doc, ctx: CheckCtx): Promise<string[]> {
-  const { svgs } = await renderFigures(doc, ctx.cacheDir, renderOptions(ctx.theme, ctx.config));
-  const dir = join(ctx.cacheDir, "review-img");
+  const { svgs } = await renderFigures(doc, ctx.workDir, renderOptions(ctx.theme, ctx.config));
+  const dir = join(ctx.workDir, "review-img");
   mkdirSync(dir, { recursive: true });
   return Object.entries(svgs).map(([id, svg]) => {
     const out = join(dir, `${doc.name}-${id}.png`);
@@ -55,19 +55,16 @@ export function reviewChecks(root: string, doc: Doc): Check[] {
       severity: "error",
       async run(doc, ctx) {
         const model = ctx.config.review.model;
-        const key = createHash("sha256").update(JSON.stringify({ data: doc.data, a, model })).digest("hex").slice(0, 24);
-        const file = join(ctx.cacheDir, "review", `${key}.json`);
+        if (!ctx.options.review) throw new Skip("未実行（--review で実行）");
         let out: ReviewOutput | undefined;
-        if (existsSync(file)) out = JSON.parse(readFileSync(file, "utf8"));
-        else {
-          if (!ctx.options.review) throw new Skip("未実行（--review で実行）");
+        {
           const images = await figurePngs(doc, ctx).catch(() => []);
           const claude = ctx.options.claude ?? defaultClaude;
           let last: Error | undefined;
           for (let i = 0; i <= ctx.config.review.retries && !out; i++) {
             try {
               out = parseReviewOutput(
-                await claude({ prompt: buildPrompt(ctx.root, doc, a, images), schema: REVIEW_SCHEMA, model, timeoutMs: ctx.config.review.timeoutMs, addDirs: images.length ? [join(ctx.cacheDir, "review-img")] : [] }),
+                await claude({ prompt: buildPrompt(ctx.root, doc, a, images), schema: REVIEW_SCHEMA, model, timeoutMs: ctx.config.review.timeoutMs, addDirs: images.length ? [join(ctx.workDir, "review-img")] : [] }),
               );
             } catch (e) {
               if (e instanceof ToolMissing) throw e;
@@ -75,8 +72,6 @@ export function reviewChecks(root: string, doc: Doc): Check[] {
             }
           }
           if (!out) throw new Unknown(`レビュー失敗: ${last?.message}`);
-          mkdirSync(join(ctx.cacheDir, "review"), { recursive: true });
-          writeFileSync(file, JSON.stringify(out));
         }
         if (!out || out.verdict === "pass") return [];
         const fs = out.findings.length ? out.findings : [{ reason: "不合格（理由なし）" }];

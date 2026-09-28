@@ -28,4 +28,5 @@ export function loadConfig(root: string): Config {
   return out;
 }
 
-export const cacheDir = (root: string) => join(root, ".test-runner", "cache");
+/** 実行ごとの作業ディレクトリの置き場（中身は毎回作り直し、終了時に削除する） */
+export const workRoot = (root: string) => join(root, ".test-runner", "work");

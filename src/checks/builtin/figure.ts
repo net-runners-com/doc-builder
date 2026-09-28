@@ -8,7 +8,7 @@ export const figureRender = defineCheck({
   kinds: ["*"],
   severity: "error",
   async run(doc, ctx) {
-    const { errors } = await renderFigures(doc, ctx.cacheDir, renderOptions(ctx.theme, ctx.config));
+    const { errors } = await renderFigures(doc, ctx.workDir, renderOptions(ctx.theme, ctx.config));
     const missing = errors.filter((e) => e.error instanceof ToolMissing);
     const out = errors
       .filter((e) => !(e.error instanceof ToolMissing))
