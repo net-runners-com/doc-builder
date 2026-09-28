@@ -1,8 +1,8 @@
-# doc-test-runner
+# doc-builder
 
 提案書・手順書・サービス説明書・利用規約を YAML で書き、Unity Test Runner のように検証してから `.md` / `.pdf` にビルドする。
 
-設計: `docs/superpowers/specs/2026-09-28-doc-test-runner-design.md`（追補 A: fact と実機検証、B: レイアウト、C: 表記スタイル・ハードコードなし・キャッシュなし、D: 観点×範囲、E: manifest・体裁）
+設計: `docs/superpowers/specs/2026-09-28-doc-builder-design.md`（追補 A: fact と実機検証、B: レイアウト、C: 表記スタイル・ハードコードなし・キャッシュなし、D: 観点×範囲、E: manifest・体裁）
 
 ## 必要なもの
 
@@ -47,7 +47,7 @@ bun test                                # ランナー自体のテスト
 | レビュー | LLM による補助（常に警告、事実部分は伏せて渡す） | `--review` |
 
 範囲は 単語 / 文 / 項目 / 章 / 文書 / 資料間。指摘には文 ID（`<blockId>#<n>`）が付く。ツール自体の文言は `src/messages/default.json`（プロジェクトの `messages.json` で上書き）。
-- `serve` は起動時に `.test-runner/urls.json`（`[{title, url}]`）を書き出す。どの ADE からもこの一覧で各テスト・プレビューを開ける。
+- `serve` は起動時に `.doc-builder/urls.json`（`[{title, url}]`）を書き出す。どの ADE からもこの一覧で各テスト・プレビューを開ける。
 
 ## 3 つの切り替え軸
 

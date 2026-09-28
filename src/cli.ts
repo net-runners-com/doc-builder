@@ -49,7 +49,7 @@ switch (cmd) {
   }
   case "serve": {
     const s = await startServer(root, { port: v.port ? Number(v.port) : undefined, register: v["register-superset"], watch: true });
-    console.log(`doc-test-runner: ${s.base}/`);
+    console.log(`doc-builder: ${s.base}/`);
     console.log(m("cli.urls", { path: s.urlsFile }));
     if (v["register-superset"]) console.log(m("cli.registered"));
     break;

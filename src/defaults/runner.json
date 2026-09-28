@@ -21,7 +21,7 @@
   ],
   "online": {
     "timeoutMs": 10000,
-    "userAgent": "doc-test-runner/0.1",
+    "userAgent": "doc-builder/0.1",
     "blockedStatuses": [
       401,
       403,

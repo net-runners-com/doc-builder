@@ -35,7 +35,7 @@ test("ツリーと固有 URL", async () => {
 
 test("urls.json と superset 登録（既存項目を保持し同名だけ置換）", () => {
   const urls = JSON.parse(readFileSync(s.urlsFile, "utf8"));
-  expect(urls.map((u: any) => u.title)).toEqual(["doc-test-runner", "g テスト", "g プレビュー"]);
+  expect(urls.map((u: any) => u.title)).toEqual(["doc-builder", "g テスト", "g プレビュー"]);
   const reg = JSON.parse(readFileSync(superset, "utf8"));
   expect(reg[0]).toEqual({ title: "会社共有", url: "https://x" });
   expect(reg.filter((u: any) => u.title === "g テスト")).toHaveLength(1);

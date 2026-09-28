@@ -1,4 +1,4 @@
-# doc-test-runner Implementation Plan
+# doc-builder Implementation Plan
 
 > 実行方式: Native（メインエージェントが直接実装）。各タスクは TDD（失敗テスト → 実装 → 通過 → コミット）。
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Bun 1.3, TypeScript, yaml 2.9, ajv 8, vega 6 / vega-lite 6, @resvg/resvg-js, d2 CLI, typst CLI, claude CLI。
 
-**Spec:** `docs/superpowers/specs/2026-09-28-doc-test-runner-design.md`
+**Spec:** `docs/superpowers/specs/2026-09-28-doc-builder-design.md`
 
 ## Global Constraints
 

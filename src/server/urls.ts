@@ -10,7 +10,7 @@ export interface UrlEntry {
 
 export function urlEntries(base: string, docs: string[]): UrlEntry[] {
   return [
-    { title: "doc-test-runner", url: `${base}/` },
+    { title: "doc-builder", url: `${base}/` },
     ...docs.flatMap((d) => [
       { title: m("ui.url-test", { doc: d }), url: `${base}/t/${encodeURIComponent(d)}` },
       { title: m("ui.url-preview", { doc: d }), url: `${base}/p/${encodeURIComponent(d)}` },
@@ -19,7 +19,7 @@ export function urlEntries(base: string, docs: string[]): UrlEntry[] {
 }
 
 export function writeUrls(root: string, entries: UrlEntry[]): string {
-  const p = join(root, ".test-runner", "urls.json");
+  const p = join(root, ".doc-builder", "urls.json");
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, JSON.stringify(entries, null, 2) + "\n");
   return p;

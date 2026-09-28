@@ -1,5 +1,5 @@
 {
-  "name": "doc-test-runner",
+  "name": "doc-builder",
   "private": true,
   "type": "module",
   "scripts": {

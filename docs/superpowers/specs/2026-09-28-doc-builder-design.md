@@ -1,4 +1,4 @@
-# doc-test-runner 設計書
+# doc-builder 設計書
 
 - 日付: 2026-09-28
 - 状態: 設計承認済み（実装計画前）
@@ -15,7 +15,7 @@
 
 - `samples/README.md` の正解 15 件が、本設計の該当手段（構造的排除・ビルドエラー・ルール・レビュワー）で扱われる（§11 の対応表）。
 - `bun run test` が CI で使える（不合格で exit 1）。
-- `bun run serve` でツリー UI が開き、`.test-runner/urls.json` が出力される。
+- `bun run serve` でツリー UI が開き、`.doc-builder/urls.json` が出力される。
 
 ### 前提
 
@@ -207,7 +207,7 @@ export default defineCheck({
 | online/quote | online | error | 引用文がページ本文に存在しない（空白・全半角・改行を正規化して照合） |
 | review/* | review | error | §6 の観点ごと |
 
-`online` は `--online` 指定時のみ実行。取得結果は `.test-runner/cache/http/` に保存し、未指定時はキャッシュがあれば使い、なければ `skipped`。取得失敗（ボット遮断・タイムアウト）は `unknown`。
+`online` は `--online` 指定時のみ実行。取得結果は `.doc-builder/cache/http/` に保存し、未指定時はキャッシュがあれば使い、なければ `skipped`。取得失敗（ボット遮断・タイムアウト）は `unknown`。
 
 ## 6. レビュワー
 
@@ -225,7 +225,7 @@ aspects:
 - 観点 1 件ごとに `claude -p` を 1 回実行。入力: IR（JSON）+ 観点 + 出力スキーマ。chart / diagram を含む場合は描画 SVG→PNG も添付し、本文との矛盾を確認させる。
 - 出力: `{ verdict: pass|fail, findings: [{ blockId, reason }] }`。JSON 解析失敗時は 1 回再試行、再失敗で `unknown`。
 - 同梱設定 `src/review/settings.json`: `permissions.defaultMode: plan`、`deny: Edit/Write/MultiEdit/NotebookEdit/Bash`。`claude -p --settings <同梱> --output-format json` で呼ぶ。claudehac には依存しない。
-- キャッシュ: キー = hash(IR の対象部分 + 観点 + モデル名)。`.test-runner/cache/review/`。
+- キャッシュ: キー = hash(IR の対象部分 + 観点 + モデル名)。`.doc-builder/cache/review/`。
 - 実行条件: `--review` 指定時のみ実行。未指定時はキャッシュがあれば表示、なければ `skipped`。
 - モデルは `runner.yaml` の `review.model`。
 
@@ -279,7 +279,7 @@ bun run serve [--port 4600] [--register-superset]
 - ボタン: 全体再実行、ノード単位再実行、`--review` / `--online` 付き再実行。
 - プレビュー: `/p/<doc>?theme=<name>` で PDF を表示、テーマ切替メニュー。
 - ファイル監視: `content/` `themes/` `reviews/` `checks/` の変更で自動再実行（review / online は除く）。
-- 起動時に `.test-runner/urls.json` を `[{ title, url }]` 形式で書き出す（全体・文書ごと・プレビュー）。
+- 起動時に `.doc-builder/urls.json` を `[{ title, url }]` 形式で書き出す（全体・文書ごと・プレビュー）。
 - `--register-superset`: 同じ項目を `~/.superset/hosted-urls.json` に追記（既存項目は title で重複排除、他の項目は変更しない）。既定では書かない。
 
 ## 10. エラー処理
@@ -330,7 +330,7 @@ src/
   cli.ts
 samples/            既存 Markdown サンプルと正解表（参考資料）
 dist/               ビルド出力（git 管理外）
-.test-runner/       キャッシュ、urls.json（git 管理外）
+.doc-builder/       キャッシュ、urls.json（git 管理外）
 runner.yaml         既定テーマ、review.model、source 期限日数、port
 ```
 
@@ -393,7 +393,7 @@ runner.yaml         既定テーマ、review.model、source 期限日数、port
 | probe/&lt;ID&gt; | probe | error | fact ごとの実機検証。`@facts` の下に並ぶ |
 | fact/refs | rules | error | 文書が参照している fact のうち、直近の probe 結果が fail のもの |
 
-- probe は `--probe` 指定時のみ実行。未指定時は前回結果（`.test-runner/cache/probe/<ID>.json`: `{status, stdout, ms, host, at}`）を表示し、無ければ `skipped`。
+- probe は `--probe` 指定時のみ実行。未指定時は前回結果（`.doc-builder/cache/probe/<ID>.json`: `{status, stdout, ms, host, at}`）を表示し、無ければ `skipped`。
 - 結果の表示にはマシン名と日時を付ける。
 - 実行前に件数を表示する（コマンドは YAML の記述をそのまま実行。読み取り専用にするのは書き手の責任）。
 - `--update-snapshots`: capture の出力をスナップショットに書き込み、その fact は pass。
@@ -503,7 +503,7 @@ footer: [要素...]
 
 - レビュー・実機検証・出典取得は、フラグ指定時のみ毎回実行し、結果を保存・流用しない。未指定は `skipped`。
 - `fact/refs` は同じ実行の実機検証結果だけを見る（`--probe` なしは skipped）。
-- 図は毎回描画し、実行ごとの作業ディレクトリ（`.test-runner/work/run-*`、終了時に削除）に出す。
+- 図は毎回描画し、実行ごとの作業ディレクトリ（`.doc-builder/work/run-*`、終了時に削除）に出す。
 - メモリ上のキャッシュ（部品定義・フォント一覧・スキーマ）も持たない。
 - `facts/snapshots/` は承認済みの期待出力（git 管理）でありキャッシュではない。
 

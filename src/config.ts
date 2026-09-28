@@ -33,4 +33,4 @@ export function loadConfig(root: string): Config {
 }
 
 /** 実行ごとの作業ディレクトリの置き場（中身は毎回作り直し、終了時に削除する） */
-export const workRoot = (root: string) => join(root, ".test-runner", "work");
+export const workRoot = (root: string) => join(root, ".doc-builder", "work");

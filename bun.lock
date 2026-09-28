@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "doc-test-runner",
+      "name": "doc-builder",
       "dependencies": {
         "@resvg/resvg-js": "^2.6.2",
         "ajv": "^8.20.0",

@@ -46,7 +46,7 @@ export async function buildAll(
       if (page.errors.length) res.warnings.push(m("build.layout-error", { doc: doc.name, id: page.id, error: page.errors[0] }));
       const reg = registry(root);
       const company = loadCompany(root).company;
-      const { svgs, errors } = await renderFigures(doc, join(root, ".test-runner", "build", theme.id, page.id, doc.name + ".render"), renderOptions(theme, config, doc.strings));
+      const { svgs, errors } = await renderFigures(doc, join(root, ".doc-builder", "build", theme.id, page.id, doc.name + ".render"), renderOptions(theme, config, doc.strings));
       if (errors.length) {
         res.errors.push(...errors.map((e) => m("build.figure-error", { doc: doc.name, id: e.id, error: e.error.message })));
         continue;
@@ -75,7 +75,7 @@ export async function buildAll(
       }
       if (formats.includes("pdf")) {
         try {
-          const pdf = await emitPdf(l, theme, doc, join(root, ".test-runner", "build", theme.id, page.id, doc.name), join(outDir, `${doc.name}.pdf`), { page, reg, company });
+          const pdf = await emitPdf(l, theme, doc, join(root, ".doc-builder", "build", theme.id, page.id, doc.name), join(outDir, `${doc.name}.pdf`), { page, reg, company });
           res.outputs.push(pdf);
           record("pdf", pdf);
         } catch (e) {

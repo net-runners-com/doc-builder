@@ -1,4 +1,4 @@
-// doc-test-runner 既定テンプレート（見た目のみ。値はすべて theme から受け取る）。
+// doc-builder 既定テンプレート（見た目のみ。値はすべて theme から受け取る）。
 // theme.template で差し替える場合も同じ引数を受け取ること。区画はレイアウトから組み立て済みの content で渡される。
 // 改ページはレイアウトの pagebreak 部品で明示する（テンプレートは区画の前後で改ページしない。表紙だけは独立ページ）。
 #let template(theme: (:), title: "", cover: none, front: none, back: none, header: none, footer: none, start: "front", watermark: none, body) = {
