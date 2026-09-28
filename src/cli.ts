@@ -2,6 +2,7 @@ import { parseArgs } from "node:util";
 import { buildAll } from "./build";
 import { exitCode, formatText } from "./runner/format";
 import { runAll } from "./runner/run";
+import { startServer } from "./server";
 
 const { values: v, positionals } = parseArgs({
   args: process.argv.slice(2),
@@ -31,6 +32,13 @@ switch (cmd) {
     for (const w of res.warnings) console.log(`! ${w}`);
     for (const e of res.errors) console.log(`✗ ${e}`);
     process.exit(res.errors.length ? 1 : 0);
+  }
+  case "serve": {
+    const s = await startServer(root, { port: v.port ? Number(v.port) : undefined, register: v["register-superset"], watch: true });
+    console.log(`doc-test-runner: ${s.base}/`);
+    console.log(`URL 一覧: ${s.urlsFile}`);
+    if (v["register-superset"]) console.log("~/.superset/hosted-urls.json に登録しました");
+    break;
   }
   default:
     console.error("usage: bun src/cli.ts <test|build|serve> [paths...] [--online] [--review] [--theme a,b] [--strict] [--json]");
