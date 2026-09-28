@@ -13,6 +13,8 @@ import { defaultClaude, parseReviewOutput, REVIEW_SCHEMA, type ReviewOutput } fr
 export interface Aspect {
   id: string;
   ask: string;
+  /** ルール（システム判定）にできない理由。必須 */
+  why_not_rule: string;
 }
 
 export function loadAspects(root: string, kind: Kind): Aspect[] {
@@ -23,6 +25,14 @@ export function loadAspects(root: string, kind: Kind): Aspect[] {
   return [...read("_common.yaml"), ...read(`${kind}.yaml`)];
 }
 
+/** 事実の埋め込み（fact / calc / capture）を ［事実:ID］ に置き換える。表現のレビューで事実の正誤を判定させないため */
+export function maskFacts(v: unknown): unknown {
+  if (typeof v === "string") return v.replace(/\{\{\s*(fact|capture|calc):([^}]*?)\s*\}\}/g, (_a, k, id) => `［事実:${k === "calc" ? "計算" : id.trim()}］`);
+  if (Array.isArray(v)) return v.map(maskFacts);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([k]) => k !== "facts").map(([k, x]) => [k, maskFacts(x)]));
+  return v;
+}
+
 /** 指示文は reviews/_prompt.md（{{aspect}} {{images}} {{document}}）と reviews/_images.md（{{paths}}） */
 export function buildPrompt(root: string, doc: Doc, a: Aspect, images: string[]): string {
   const read = (f: string) => readFileSync(join(root, "reviews", f), "utf8");
@@ -31,7 +41,7 @@ export function buildPrompt(root: string, doc: Doc, a: Aspect, images: string[])
   return fill(read("_prompt.md"), {
     aspect: a.ask,
     images: images.length ? fill(read("_images.md"), { paths: images.join(", ") }) : "",
-    document: JSON.stringify({ kind: doc.kind, labels, data: doc.data }, null, 2),
+    document: JSON.stringify({ kind: doc.kind, labels, data: maskFacts(doc.data) }, null, 2),
   });
 }
 

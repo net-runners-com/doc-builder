@@ -1,5 +1,6 @@
 import { m } from "../../messages";
 import { existsSync, readFileSync } from "node:fs";
+import { loadYaml } from "../../parse/yaml";
 import { join, resolve } from "node:path";
 import { loadCompany } from "../../page/company";
 import { loadComponents, withDefaults } from "../../page/components";
@@ -107,6 +108,36 @@ export const approvalComplete = defineCheck({
     approvals.forEach((a, i) => {
       if (a.stamp && !existsSync(resolve(doc.dir, a.stamp))) out.push(ctx.fail(m("check.approval.stamp-missing", { path: a.stamp }), { line: line(i) }));
     });
+    return out;
+  },
+});
+
+/** reviews/*.yaml の観点: ask と why_not_rule が必須、ID の重複なし */
+export const reviewValid = defineProjectCheck({
+  id: "review/valid",
+  axis: "structure",
+  scope: "corpus",
+  severity: "error",
+  run(ctx) {
+    const dir = join(ctx.root, "reviews");
+    if (!existsSync(dir)) return [];
+    const out = [];
+    const seen = new Map<string, string>();
+    for (const f of [...new Bun.Glob("*.yaml").scanSync({ cwd: dir })].sort()) {
+      const l = loadYaml(readFileSync(join(dir, f), "utf8"));
+      if (l.error) {
+        out.push(ctx.fail(m("parse.yaml", { error: l.error.message }), { blockId: f, line: l.error.line }));
+        continue;
+      }
+      ((l.data?.aspects ?? []) as any[]).forEach((a, i) => {
+        const line = l.lineOf(`/aspects/${i}`);
+        for (const k of ["id", "ask", "why_not_rule"]) if (!a?.[k]) out.push(ctx.fail(m("check.review.aspect-missing", { file: f, key: k }), { blockId: a?.id, line }));
+        const kind = f.replace(/\.yaml$/, "");
+        const key = `${kind === "_common" ? "*" : kind}:${a?.id}`;
+        if (a?.id && (seen.has(key) || seen.has(`*:${a.id}`))) out.push(ctx.fail(m("check.review.aspect-dup", { id: a.id, file: f }), { blockId: a.id, line }));
+        seen.set(key, f);
+      });
+    }
     return out;
   },
 });

@@ -47,3 +47,17 @@ test("2 回とも不正なら unknown", async () => {
   const r = review(await runAll(root, { review: true, claude: async () => "bad" }));
   expect(r.status).toBe("unknown");
 });
+
+test("事実の埋め込みは ［事実:ID］ に置き換えて渡す", async () => {
+  const { maskFacts } = await import("../src/review/checks");
+  expect(maskFacts({ body: "担当は{{fact:contact}}、合計{{calc:sum(costs, qty)}}円。{{ref:a}}", facts: [{ id: "contact", value: "山田" }] })).toEqual({
+    body: "担当は［事実:contact］、合計［事実:計算］円。{{ref:a}}",
+  });
+});
+
+test("review/valid: why_not_rule が必須", async () => {
+  const { reviewValid } = await import("../src/checks/builtin/layout");
+  writeFileSync(join(root, "reviews", "terms.yaml"), "aspects:\n  - { id: x, ask: 問い }\n");
+  const f = (await reviewValid.run({ root, fail: (message: string, loc = {}) => ({ message, loc: { doc: "@themes", ...loc } }) } as any)) as any[];
+  expect(f.map((x) => x.message)).toEqual(["reviews/guide.yaml: 観点に why_not_rule がありません", "reviews/terms.yaml: 観点に why_not_rule がありません"]);
+});
