@@ -404,3 +404,69 @@ runner.yaml         既定テーマ、review.model、source 期限日数、port
 
 - SSH 経由のリモート検証（test-runner は検証対象のマシン上で実行する）
 - 禁止語リスト
+
+---
+
+## 追補 B: レイアウト（部品の組み合わせ）（2026-09-28）
+
+見た目（色・フォント・用紙・番号書式・透かし）は**テーマ**、部品の配置は**レイアウト**に分ける。テーマから `cover` / `toc` / `header` / `footer` を削除し、レイアウトへ移す。
+
+### B.1 レイアウトファイル
+
+`layouts/<名前>.yaml`。`extends` で継承（区画単位で置き換え）。解決順（後勝ち）: 組み込み既定 → `layouts/default.yaml` → extends 連鎖 → 文書の `layout:`（名前またはインライン）→ CLI `--layout`（文書指定を丸ごと置き換え）。既定名は `runner.yaml` の `defaultLayout`（既定 `standard`）。
+
+```yaml
+name: 正式文書
+extends: standard
+page_numbers: { start_at: front }     # cover | front | body（既定 front）
+cover:  [要素...]                      # 空または省略で表紙なし
+front:  [要素...]                      # 表紙の後・本文の前
+back:   [要素...]                      # 本文の後
+header: [要素...]
+footer: [要素...]
+```
+
+要素 = `部品名` または `{ 部品名: 設定 }`。コンテナは設定の `children` に要素を持つ。設定がスカラーの部品もある（`spacer: 25%`）。
+
+### B.2 部品
+
+| 部品 | 設定 | 置ける区画 | 必要なデータ |
+|------|------|-----------|-------------|
+| row | justify(start/center/end/space-between), gap, children | 全部 | — |
+| column | gap, align(left/center/right), children | 全部 | — |
+| grid | columns(長さ・fr の配列), gap, children | 全部 | — |
+| box | padding, border(太さ), fill(色 or primary/accent), width, children | 全部 | — |
+| spacer | 長さ / % / `fill` | cover, front, back | — |
+| pagebreak | — | front, back | — |
+| text | value（`{{meta.x}}` 可）, size, bold | 全部 | — |
+| title | size | cover, front | meta.title |
+| meta-table | fields | cover, front, back | meta の各 field |
+| company | show(name/address/tel/email/url の配列), logo(bool) | cover, front, back | company.yaml |
+| company-mini | — | header, footer, cover | company.yaml |
+| approval | roles | cover, front, back | meta.approvals |
+| history | — | front, back | meta.history |
+| toc | depth, title | cover, front | — |
+| page-number | format（`{page}` `{pages}`） | header, footer | — |
+| confidential | text | 全部 | — |
+
+自作部品: `components/<名前>.yaml`（`props`: JSON Schema、`regions`、`container`）と `components/<名前>.typ`（`#let <名前>(props, ctx, children) = ...`。ctx は meta / company）。Markdown には出力しない（ビルドログに 1 行）。
+
+### B.3 データ
+
+- `company.yaml`（プロジェクト直下）: `name`（必須）, `logo`, `address`, `tel`, `email`, `url`。logo はこのファイルからの相対パス。
+- `meta.number`（文書番号）, `meta.approvals: [{ role, name?, date?, stamp? }]`, `meta.history: [{ version, date, note }]` を meta に追加。stamp は文書からの相対パス。
+
+### B.4 チェック
+
+| id | 対象 | severity | 内容 |
+|----|------|----------|------|
+| layout/valid | @themes | error | 全レイアウトの木を検証: 未知の部品、設定の型違い、children 不可の部品に子、区画違反、extends 循環・欠落、自作部品のファイル欠落（行番号付き） |
+| layout/data | 文書 | error | 文書が使うレイアウトの部品が必要とするデータの欠落（company.yaml、meta.approvals の役割不足、meta.history、meta-table の field） |
+| approval/complete | 文書 | error | version ≥ 1.0 で承認欄に name / date の空欄、stamp 画像の欠落 |
+
+### B.5 出力
+
+- PDF: レイアウトの木を Typst 式に変換。表紙は独立ページ、front/back は本文の前後に流す。
+- Markdown: 区画を上から文字で表現（row 等の配置は無視、approval / history / meta-table は表、company は行）。header / footer は反映しない。
+- 出力先: `dist/<theme>/<layout>/<doc>.{md,pdf}`。`--layout a,b` で複数レイアウトを一括ビルド。
+- 同梱レイアウト: `simple`（表紙なし・目次なし）、`standard`（表紙＋目次、現行相当）、`formal`（ロゴ・社外秘・承認印・改訂履歴）。
