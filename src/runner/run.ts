@@ -55,7 +55,7 @@ export function loadDoc(root: string, config: Config, file: string, over: LoadOv
   return { doc, theme, layout };
 }
 
-const TRIGGER_FLAG = { probe: "probe", online: "online", review: "review" } as const;
+const TRIGGER_FLAG = { probe: "probe", online: "online", review: "review", render: "render" } as const;
 
 async function runOne(
   check: { id: string; axis: Axis; scope: Scope; trigger?: Trigger; severity: "error" | "warn" },
@@ -88,6 +88,7 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
   mkdirSync(workRoot(root), { recursive: true });
   const workDir = mkdtempSync(join(workRoot(root), "run-"));
   const probes = new Map<string, ProbeResult>();
+  const memo = new Map<string, unknown>();
   try {
   const base = (doc: string): BaseCtx => ({
     root,
@@ -96,6 +97,7 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
     today,
     workDir,
     probes,
+    memo,
     fail: (message, loc = {}) => ({ message, loc: { doc, ...loc } }),
   });
   const project = async (doc: string, checks: ProjectCheck[]) => {

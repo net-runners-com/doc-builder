@@ -31,33 +31,57 @@ export function inline(s: string): string {
   return out + esc(s.slice(last));
 }
 
-function node(n: Node, asset: (p: string, id: string) => string, s: Strings): string {
+/** ブロック単位のノードは dtr-node で包む（高さを測って収まれば分割しない・位置の目印を置く） */
+function node(n: Node, asset: (p: string, id: string) => string, s: Strings, seq: Map<string, number>): string {
+  const autoId = (kind: string) => {
+    const i = (seq.get(kind) ?? 0) + 1;
+    seq.set(kind, i);
+    return `${kind}-${i}`;
+  };
+  const wrap = (kind: string, id: string | undefined, body: string, opts: { keep?: boolean; sticky?: boolean } = {}) =>
+    `#dtr-node(${str(kind)}, ${str(id ?? autoId(kind))}, ${body}, keep: ${opts.keep ?? true}, sticky: ${opts.sticky ?? false})\n`;
   switch (n.t) {
     case "h":
-      return `${"=".repeat(n.level - 1)} ${inline(n.text)}\n`;
+      return wrap("heading", n.id ?? n.key, `heading(level: ${n.level - 1})[${inline(n.text)}]`, { keep: false, sticky: true });
+    case "group":
+      return wrap("group", n.id, `[${n.nodes.map((c) => node(c, asset, s, seq)).join("\n")}]`);
     case "p":
-      return `${inline(n.text)}\n`;
+      return `${TEXT_MARK}${inline(n.text)}\n`;
     case "ol":
-      return n.items.map((s) => `+ ${inline(s)}`).join("\n") + "\n";
+      return `${TEXT_MARK}\n` + n.items.map((x) => `+ ${inline(x)}`).join("\n") + "\n";
     case "ul":
-      return n.items.map((s) => `- ${inline(s)}`).join("\n") + "\n";
+      return `${TEXT_MARK}\n` + n.items.map((x) => `- ${inline(x)}`).join("\n") + "\n";
     case "kv":
-      return `#strong[${esc(n.label + t(s, "label.separator"))}] ${inline(n.text)}\n`;
+      return `${TEXT_MARK}#strong[${esc(n.label + t(s, "label.separator"))}] ${inline(n.text)}\n`;
     case "code":
-      return `#raw(block: true, ${str(n.text.replace(/\n$/, ""))})\n`;
+      return wrap("code", undefined, `raw(block: true, ${str(n.text.replace(/\n$/, ""))})`);
     case "table": {
       const cells = (r: string[]) => r.map((c) => `[${inline(c)}]`).join(", ");
-      const t = `table(columns: ${n.columns.length}, table.header(${cells(n.columns)}), ${n.rows.map(cells).join(", ")})`;
-      return n.caption ? `#figure(${t}, caption: [${inline(n.caption)}])\n` : `#${t}\n`;
+      const tb = `table(columns: ${n.columns.length}, table.header(${cells(n.columns)}), ${n.rows.map(cells).join(", ")})`;
+      return wrap("table", n.id, n.caption ? `figure(${tb}, caption: [${inline(n.caption)}])` : tb, { keep: !n.breakable });
     }
     case "quote":
-      return `#quote(${n.cite ? `attribution: [${esc(n.cite)}]` : ""})[${inline(n.text)}]\n`;
+      return wrap("quote", undefined, `quote(${n.cite ? `attribution: [${esc(n.cite)}]` : ""})[${inline(n.text)}]`);
     case "figure":
-      return `#figure(image(${str(asset(n.path, n.id))}, alt: ${str(n.alt)}, width: eval(theme.typography.figure_width))${n.caption ? `, caption: [${inline(n.caption)}]` : ""})\n`;
+      return wrap("figure", n.id, `figure(image(${str(asset(n.path, n.id))}, alt: ${str(n.alt)}, width: eval(theme.typography.figure_width))${n.caption ? `, caption: [${inline(n.caption)}]` : ""})`);
     case "sources":
       return `= ${esc(t(s, "section.sources"))}\n${n.items.map((it) => `${esc(it.label)} ${esc(it.title)}. #link(${str(it.url)}) ${esc(t(s, "label.accessed", { date: it.accessed }))}\n`).join("\n")}`;
   }
 }
+
+/** 本文（段落・箇条書き）の始まりの目印。見出しの取り残しの判定に使う */
+const TEXT_MARK = `#dtr-mark("text", "", "start", false)`;
+
+/** 位置の目印と、測って収まれば分割しないブロック */
+const PAGINATION = `#let dtr-mark(kind, id, edge, keep) = context [#metadata((kind: kind, id: id, edge: edge, keep: keep, page: here().page(), y: here().position().y.pt())) <dtr>]
+#let dtr-node(kind, id, body, keep: true, sticky: false) = context {
+  let m = theme.margin
+  let avail = page.height - eval(m.top) - eval(m.bottom)
+  let w = page.width - 2 * eval(m.x)
+  let fits = keep and measure(block(width: w, body)).height <= avail * eval(theme.pagination.keep_max)
+  block(breakable: not fits, sticky: sticky, width: 100%, [#dtr-mark(kind, id, "start", fits)#body#dtr-mark(kind, id, "end", fits)])
+}
+#let dtr-page = context [#metadata((kind: "page", height: page.height.pt(), top: eval(theme.margin.top).pt(), bottom: eval(theme.margin.bottom).pt())) <dtr>]`;
 
 /** 未インストールのフォントを除く（typst の警告を避ける）。全滅なら元のまま */
 function availableFonts(f: ResolvedTheme["fonts"]) {
@@ -107,14 +131,17 @@ export function emitTypst(l: Content, theme: ResolvedTheme, doc: Doc, work: stri
     return `#import "components/${name}.typ": render as ${typstFn(name)}`;
   });
   const wm = watermarkActive(theme, meta) ? str(theme.watermark!.text) : "none";
-  const body = l.nodes.map((n) => node(n, asset, doc.strings)).join("\n");
+  const seq = new Map<string, number>();
+  const body = l.nodes.map((n) => node(n, asset, doc.strings, seq)).join("\n");
   const src = [
     `#import "template.typ": template`,
     ...imports,
     `#let theme = json("theme.json")`,
     `#let ctx = json("ctx.json")`,
+    PAGINATION,
     `#show: template.with(theme: theme, title: ${str(l.title)}, cover: ${region("cover")}, front: ${region("front")}, back: ${region("back")}, header: ${region("header")}, footer: ${region("footer")}, start: ${str(p.page.page_numbers.start_at)}, watermark: ${wm})`,
     "",
+    "#dtr-page",
     body,
   ].join("\n");
   writeFileSync(join(work, "main.typ"), src);

@@ -584,3 +584,24 @@ logic の検査: 全手順の到達可能性、全経路の終端到達、意図
 
 - チェック結果のメッセージは `src/messages/default.json`（ID → 文面、変数 `{x}`）。プロジェクトの `messages.json` で上書き可。コードは ID で参照する。
 - `bun src/cli.ts init [dir]`: themes / layouts / components / wordings / reviews / lint / runner.yaml / company.yaml / content サンプルを複製する。既存ファイルは上書きしない（`--force` で上書き）。
+
+---
+
+## 追補 E: manifest・体裁（改ページ）（2026-09-28）
+
+### E.1 dist/manifest.json
+
+Vite の manifest と同様に、出力ファイル（dist からの相対パス）ごとに記録する。
+- `doc` `format` `theme` `layout` `wording` `builtAt`
+- `output`: path / bytes / sha256
+- `inputs`: 使ったファイル（role: source / theme / template / layout / component / wording / company / facts / snapshot / image / config）と sha256。ツール本体のファイルは `tool:` 接頭辞。
+- `tests`: その組み合わせで検証した結果（状態、件数、観点別の状態と指摘数、問題のあったチェック）。ビルド時に `--render` 相当で実行する。
+- 既存 manifest に追記し、出力ファイルが無くなった項目は削除する。
+
+### E.2 体裁（axis: layout、trigger: render）
+
+- 防止: 条・手順は「まとまり（group）」、表・図・引用・コードはブロックとして、Typst の `measure()` で実寸を測り、本文領域の `theme.pagination.keep_max`（既定 60%）以下なら分割しない。見出しは次の要素と同じページに置く（sticky）。表の `breakable: true` で分割を許可できる。
+- 検出: 各ブロックと段落の始まりに位置の目印（metadata）を埋め込み、`typst eval 'query(<dtr>)'` でページと縦位置を取得して判定する。
+  - `layout/breaks`（error）: 分割しないはずの塊が 2 ページにまたがった、見出しがページ末に取り残された。
+  - `layout/gaps`（warn）: 塊を次ページに送った結果、前ページ下部の余白が `theme.pagination.max_gap`（既定 35%）を超えた。
+- `--render` 指定時と `build`（PDF）時に実行する。

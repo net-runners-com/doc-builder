@@ -10,11 +10,13 @@ export type Node =
   | { t: "code"; text: string }
   | { t: "p"; text: string }
   | { t: "ol" | "ul"; items: string[] }
-  | { t: "table"; columns: string[]; rows: string[][]; caption?: string; id?: string }
+  | { t: "table"; columns: string[]; rows: string[][]; caption?: string; id?: string; breakable?: boolean }
   | { t: "quote"; text: string; cite?: string }
   | { t: "figure"; id: string; path: string; alt: string; caption?: string }
   | { t: "kv"; key: string; label: string; text: string }
-  | { t: "sources"; items: { label: string; title: string; url: string; accessed: string }[] };
+  | { t: "sources"; items: { label: string; title: string; url: string; accessed: string }[] }
+  /** まとめて同じページに置きたい塊（条・手順）。高さが収まれば分割しない */
+  | { t: "group"; id: string; nodes: Node[] };
 
 export interface Content {
   title: string;
@@ -34,6 +36,12 @@ export function buildContent(doc: Doc, assets: Assets, snapshot: (id: string) =>
   const yen = (n: number) => t(s, "unit.yen", { n: formatNumber(n) });
   const fixed = (level: 2 | 3, key: string) => nodes.push({ t: "h", level, key, text: t(s, key) });
   const placedTables = new Set<string>();
+  /** fn の中で積んだノードを 1 つの group にまとめる */
+  const group = (id: string, fn: () => void) => {
+    const start = nodes.length;
+    fn();
+    nodes.push({ t: "group", id, nodes: nodes.splice(start) });
+  };
 
   const figureNode = (kind: string, id: string): Node => {
     if (kind === "img") {
@@ -75,6 +83,7 @@ export function buildContent(doc: Doc, assets: Assets, snapshot: (id: string) =>
         columns: tb.columns.map((c: string) => x(c)),
         rows: tb.rows.map((r: any[]) => r.map((c) => (typeof c === "number" ? formatNumber(c) : x(c)))),
         caption: `${doc.defs[id].label}${tb.title ? ` ${x(tb.title)}` : ""}`,
+        breakable: tb.breakable,
       });
     }
   };
@@ -101,11 +110,12 @@ export function buildContent(doc: Doc, assets: Assets, snapshot: (id: string) =>
   switch (doc.kind) {
     case "terms":
       if (d.preamble) para(d.preamble);
-      for (const a of d.articles) {
-        nodes.push({ t: "h", level: 2, id: a.id, text: t(s, "heading.article", { label: doc.defs[a.id].label!, title: x(a.title) }) });
-        if (a.clauses.length === 1) para(a.clauses[0], a);
-        else nodes.push({ t: "ol", items: a.clauses.map((c: string) => x(c, a)) });
-      }
+      for (const a of d.articles)
+        group(a.id, () => {
+          nodes.push({ t: "h", level: 2, id: a.id, text: t(s, "heading.article", { label: doc.defs[a.id].label!, title: x(a.title) }) });
+          if (a.clauses.length === 1) para(a.clauses[0], a);
+          else nodes.push({ t: "ol", items: a.clauses.map((c: string) => x(c, a)) });
+        });
       if (d.supplement) {
         fixed(2, "section.supplement");
         para(d.supplement);
@@ -119,7 +129,8 @@ export function buildContent(doc: Doc, assets: Assets, snapshot: (id: string) =>
         nodes.push({ t: "ul", items: d.prerequisites.map((p: string) => x(p)) });
       }
       fixed(2, "section.steps");
-      for (const st of d.steps) {
+      for (const st of d.steps)
+        group(st.id, () => {
         nodes.push({ t: "h", level: 3, id: st.id, text: t(s, "heading.step", { label: doc.defs[st.id].label!, title: x(st.title) }) });
         nodes.push({ t: "ol", items: st.actions.map((a: string) => x(a, st)) });
         nodes.push({ t: "kv", key: "label.expected", label: t(s, "label.expected"), text: x(st.expected, st) });
@@ -127,7 +138,7 @@ export function buildContent(doc: Doc, assets: Assets, snapshot: (id: string) =>
         for (const b of st.branches ?? []) nodes.push({ t: "p", text: t(s, "label.branch", { cond: x(b.if), target: lbl(b.goto) }) });
         if (st.next) nodes.push({ t: "p", text: t(s, "label.goto", { target: lbl(st.next) }) });
         if (st.end) nodes.push({ t: "p", text: t(s, "label.end") });
-      }
+        });
       if (d.troubleshooting?.length) {
         fixed(2, "section.troubleshooting");
         nodes.push({ t: "table", columns: [t(s, "column.symptom"), t(s, "column.action")], rows: d.troubleshooting.map((r: any) => [x(r.symptom), x(r.action)]) });

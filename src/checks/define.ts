@@ -9,6 +9,8 @@ export interface RunOptions {
   online?: boolean;
   review?: boolean;
   probe?: boolean;
+  /** PDF を組版して体裁（改ページ・余白）を検査する */
+  render?: boolean;
   updateSnapshots?: boolean;
   theme?: string;
   layout?: string;
@@ -27,6 +29,8 @@ export interface BaseCtx {
   workDir: string;
   /** この実行の実機検証結果（fact ID → 結果）。ディスクには保存しない */
   probes: Map<string, ProbeResult>;
+  /** この実行の中だけで使う作業結果（実行をまたいで残さない） */
+  memo: Map<string, unknown>;
   fail(message: string, loc?: Omit<Loc, "doc">): Finding;
 }
 export interface CheckCtx extends BaseCtx {

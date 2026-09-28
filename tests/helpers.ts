@@ -35,6 +35,7 @@ export function ctxFor(doc: Doc, over: Partial<CheckCtx> = {}): CheckCtx {
     today: new Date("2026-09-28"),
     workDir: "/tmp/dtr-none/work",
     probes: new Map(),
+    memo: new Map(),
     theme: resolveTheme(REPO, "default"),
     layout: resolveLayout(REPO, "standard"),
     fail: (message, loc = {}) => ({ message, loc: { doc: doc.name, ...loc } }),

@@ -26,6 +26,8 @@ export interface Theme {
     figure_width: string;
   };
   charts: { width: number; height: number; font: string };
+  /** keep_max: 本文領域に対する高さの割合がこれ以下の塊は分割しない / max_gap: ページ下部の余白の許容割合 */
+  pagination: { keep_max: string; max_gap: string };
   watermark?: { when: string; text: string };
   template?: string;
 }

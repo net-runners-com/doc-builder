@@ -158,7 +158,7 @@
   "check.review.failed": "レビュー失敗: {error}",
   "check.review.no-reason": "不合格（理由なし）",
   "init.done": "作成 {created} 件、既存のためスキップ {skipped} 件（--force で上書き）",
-  "cli.usage": "usage: bun src/cli.ts <test|build|serve|init> [paths...] [--online] [--review] [--probe] [--update-snapshots] [--theme a,b] [--layout a,b] [--wording name] [--strict] [--json] [--force]",
+  "cli.usage": "usage: bun src/cli.ts <test|build|serve|init> [paths...] [--online] [--review] [--probe] [--render] [--update-snapshots] [--theme a,b] [--layout a,b] [--wording name] [--strict] [--json] [--force]",
   "check.flow.dangling": "{from} の行き先 \"{to}\" は存在しない手順です",
   "check.flow.unknown-step": "フロー「{flow}」が存在しない手順 \"{id}\" を指定しています",
   "check.flow.unreachable": "{step} には最初の手順からたどり着けません",
@@ -183,5 +183,16 @@
   "check.expect.actions": "{sentence}: 一文に動作が {n} 個あります（上限 {max}）",
   "cli.manifest": "manifest: {path}",
   "check.review.aspect-missing": "reviews/{file}: 観点に {key} がありません",
-  "check.review.aspect-dup": "観点 ID \"{id}\" が重複しています（{file}）"
+  "check.review.aspect-dup": "観点 ID \"{id}\" が重複しています（{file}）",
+  "axis.layout": "体裁",
+  "run.skipped.render": "未実行（--render で実行）",
+  "kind.group": "まとまり",
+  "kind.table": "表",
+  "kind.figure": "図",
+  "kind.heading": "見出し",
+  "kind.quote": "引用",
+  "kind.code": "コード",
+  "check.pagination.split": "{kind}「{id}」がページ {page} から次のページにまたがっています",
+  "check.pagination.orphan-heading": "見出し「{id}」がページ {page} の末尾に取り残されています",
+  "check.pagination.gap": "{kind}「{id}」を次のページに送ったため、ページ {page} の下部に {ratio}% の余白があります"
 }

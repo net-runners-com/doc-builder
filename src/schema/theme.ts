@@ -9,7 +9,8 @@ const obj = (required: string[], properties: Record<string, unknown>) => ({ type
 const len = { type: "string", pattern: "^-?\\d+(\\.\\d+)?(mm|cm|pt|em|%|deg)$" };
 const typographyKeys = ["base_size", "leading", "heading_rule", "heading_rule_gap", "heading_above", "heading_below", "header_size", "header_fade", "table_stroke", "table_inset", "table_line_fade", "quote_rule", "quote_inset", "quote_inset_y", "attribution_size", "watermark_size", "watermark_angle", "watermark_fade", "figure_width"];
 
-const schema = obj(["page", "colors", "fonts", "typography", "charts"], {
+const ratio = { type: "string", pattern: "^\\d+(\\.\\d+)?%$" };
+const schema = obj(["page", "colors", "fonts", "typography", "charts", "pagination"], {
   name: str,
   extends: str,
   id: str,
@@ -22,6 +23,7 @@ const schema = obj(["page", "colors", "fonts", "typography", "charts"], {
   fonts: obj(["body", "heading", "mono"], { body: strs, heading: strs, mono: strs }),
   typography: obj(typographyKeys, Object.fromEntries(typographyKeys.map((k) => [k, len]))),
   charts: obj(["width", "height", "font"], { width: { type: "number" }, height: { type: "number" }, font: str }),
+  pagination: obj(["keep_max", "max_gap"], { keep_max: ratio, max_gap: ratio }),
   watermark: obj(["when", "text"], { when: { type: "string", pattern: "^meta\\.version\\s*(<=|>=|<|>|==)\\s*\\d+(\\.\\d+){0,2}$" }, text: str }),
   template: str,
 });

@@ -128,6 +128,7 @@ const common = {
       properties: {
         id,
         title: str,
+        breakable: { type: "boolean" },
         columns: strs,
         rows: { type: "array", items: { type: "array", items: { type: ["string", "number"] } } },
       },

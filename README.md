@@ -2,7 +2,7 @@
 
 提案書・手順書・サービス説明書・利用規約を YAML で書き、Unity Test Runner のように検証してから `.md` / `.pdf` にビルドする。
 
-設計: `docs/superpowers/specs/2026-09-28-doc-test-runner-design.md`（追補 A: fact と実機検証、B: レイアウト、C: 表記スタイル・ハードコードなし・キャッシュなし）
+設計: `docs/superpowers/specs/2026-09-28-doc-test-runner-design.md`（追補 A: fact と実機検証、B: レイアウト、C: 表記スタイル・ハードコードなし・キャッシュなし、D: 観点×範囲、E: manifest・体裁）
 
 ## 必要なもの
 
@@ -17,11 +17,13 @@ bun install
 ## 使い方
 
 ```sh
+bun src/cli.ts init my-docs             # 雛形を作る（既存ファイルは上書きしない。--force で上書き）
 bun run test                            # 全文書を検証（不合格があれば exit 1）
 bun run test proposal --review          # Claude レビューも実行
 bun run test --probe                    # fact を実機で検証
 bun run test --probe --update-snapshots # capture の出力を承認
 bun run test --online                   # 出典 URL と引用文をネットで確認
+bun run test --render                   # PDF を組版して改ページ・余白を検査
 bun run test --json                     # 結果を JSON で出力
 bun run build --theme default,sakura --layout standard,formal --wording casual
 bun run serve                           # http://localhost:4600 のツリー UI
@@ -29,7 +31,22 @@ bun run serve --register-superset       # URL 一覧を ~/.superset/hosted-urls.
 bun test                                # ランナー自体のテスト
 ```
 
-- `--review` `--probe` `--online` は付けたときだけ実行する。前回の結果は保存も流用もしない（付けなければ `–` 未実行）。
+- `--review` `--probe` `--online` `--render` は付けたときだけ実行する。前回の結果は保存も流用もしない（付けなければ `–` 未実行）。
+- `build` は出力ごとに `dist/manifest.json` へ、使った入力ファイル（ハッシュ付き）とその組み合わせでのテスト結果を記録する。
+
+## テストの分け方（観点 × 範囲）
+
+| 観点 | 中身 | 判定 |
+|------|------|------|
+| 構造 | 必須項目・採番・参照・テーマ/レイアウトの妥当性・expect の参照条件 | スキーマ・参照解決 |
+| 表層 | 用語集の避ける語・未記入のプレースホルダ | ルール |
+| 事実 | fact の実機検証・リンク・出典・日付の整合 | probe / online / 計算 |
+| 論理 | 手順のフロー（到達・終端・繰り返し・状態の連鎖・シナリオ）・日程の順序 | グラフ解析 |
+| 表現 | 文長・読点・文体の混在・一文一動作・expect の語条件 | 形態素解析と数値 |
+| 体裁 | 改ページで塊が割れていないか・見出しの取り残し・大きな余白 | 組版結果の位置 |
+| レビュー | LLM による補助（常に警告、事実部分は伏せて渡す） | `--review` |
+
+範囲は 単語 / 文 / 項目 / 章 / 文書 / 資料間。指摘には文 ID（`<blockId>#<n>`）が付く。ツール自体の文言は `src/messages/default.json`（プロジェクトの `messages.json` で上書き）。
 - `serve` は起動時に `.test-runner/urls.json`（`[{title, url}]`）を書き出す。どの ADE からもこの一覧で各テスト・プレビューを開ける。
 
 ## 3 つの切り替え軸

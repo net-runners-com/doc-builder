@@ -19,12 +19,16 @@ export function emitMarkdown(
   outDir: string,
   docName: string,
 ): string {
-  const headings = l.nodes.filter((n): n is Extract<Node, { t: "h" }> => n.t === "h").map((h) => ({ level: h.level, text: h.text }));
+  const flat = (ns: Node[]): Node[] => ns.flatMap((n) => (n.t === "group" ? flat(n.nodes) : [n]));
+  const headings = flat(l.nodes).filter((n): n is Extract<Node, { t: "h" }> => n.t === "h").map((h) => ({ level: h.level, text: h.text }));
   const ctx = mdCtx({ meta: data.meta, company: data.company, strings: data.strings, headings });
   const out: string[] = [`# ${l.title}`, ""];
   out.push(...regionMd(page.cover, reg, ctx), ...regionMd(page.front, reg, ctx));
-  for (const n of l.nodes) {
+  const emit = (n: Node): void => {
     switch (n.t) {
+      case "group":
+        n.nodes.forEach(emit);
+        break;
       case "h":
         out.push(`${"#".repeat(n.level)} ${n.text}`, "");
         break;
@@ -63,7 +67,8 @@ export function emitMarkdown(
         out.push(`## ${t(data.strings, "section.sources")}`, "", ...n.items.map((s) => `${s.label} ${s.title}. <${s.url}>${t(data.strings, "label.accessed", { date: s.accessed })}  `), "");
         break;
     }
-  }
+  };
+  l.nodes.forEach(emit);
   out.push(...regionMd(page.back, reg, ctx));
   return out.join("\n").replace(/\n{3,}/g, "\n\n").replace(/\n+$/, "\n");
 }

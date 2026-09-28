@@ -54,7 +54,7 @@ export async function buildAll(
       const l = buildContent(doc, svgs, (id: string) => readSnapshot(root, id));
       mkdirSync(outDir, { recursive: true });
       // この組み合わせ（テーマ・レイアウト・表記スタイル）で文書を検証し、manifest に記録する
-      const report = await runAll(root, { paths: [doc.name], theme: themeName, layout: layoutName, wording: opts.wording });
+      const report = await runAll(root, { paths: [doc.name], theme: themeName, layout: layoutName, wording: opts.wording, render: formats.includes("pdf") });
       const tests = summarizeTests(report.results.filter((r) => r.doc === doc.name));
       const inputs = collectInputs(root, doc, theme, page, reg, company);
       const wording = opts.wording ?? doc.data.wording ?? config.defaultWording;

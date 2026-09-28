@@ -18,6 +18,7 @@ const ctx = () => ({
   today: new Date("2026-09-28"),
   workDir: join(root, ".work"),
   probes: new Map(),
+  memo: new Map(),
   fail: (message: string, loc = {}) => ({ message, loc: { doc: "@themes", ...loc } }),
 });
 

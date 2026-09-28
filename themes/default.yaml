@@ -38,3 +38,6 @@ charts:
   width: 420
   height: 240
   font: sans-serif
+pagination:
+  keep_max: 60%
+  max_gap: 35%

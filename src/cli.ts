@@ -14,6 +14,7 @@ const { values: v, positionals } = parseArgs({
     online: { type: "boolean", default: false },
     review: { type: "boolean", default: false },
     probe: { type: "boolean", default: false },
+    render: { type: "boolean", default: false },
     "update-snapshots": { type: "boolean", default: false },
     strict: { type: "boolean", default: false },
     json: { type: "boolean", default: false },
@@ -30,7 +31,7 @@ const root = process.cwd();
 
 switch (cmd) {
   case "test": {
-    const report = await runAll(root, { online: v.online, review: v.review, probe: v.probe || v["update-snapshots"], updateSnapshots: v["update-snapshots"], theme: v.theme, layout: v.layout, wording: v.wording, paths });
+    const report = await runAll(root, { online: v.online, review: v.review, probe: v.probe || v["update-snapshots"], render: v.render, updateSnapshots: v["update-snapshots"], theme: v.theme, layout: v.layout, wording: v.wording, paths });
     console.log(v.json ? JSON.stringify(report, null, 2) : formatText(report));
     process.exit(exitCode(report, v.strict));
   }

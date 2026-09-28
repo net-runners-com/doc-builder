@@ -25,6 +25,7 @@
   set text(font: theme.fonts.body, fill: fg, lang: "ja", size: eval(ty.base_size))
   set par(justify: true, leading: eval(ty.leading))
   show heading: set text(font: theme.fonts.heading, fill: primary)
+  show heading: set block(sticky: true)
   show heading.where(level: 1): it => block(above: eval(ty.heading_above), below: eval(ty.heading_below), stroke: (bottom: eval(ty.heading_rule) + primary), inset: (bottom: eval(ty.heading_rule_gap)), width: 100%, it)
   show raw: set text(font: theme.fonts.mono)
   show link: set text(fill: accent)
