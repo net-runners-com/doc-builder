@@ -347,3 +347,60 @@ runner.yaml         既定テーマ、review.model、source 期限日数、port
 - 見た目の回帰テスト（PDF 画像差分）
 - 非エンジニア向け編集 UI
 - docx 出力
+
+---
+
+## 追補 A: 事実（fact）と実機検証（2026-09-28）
+
+背景: 実運用のマニュアル検査で出た指摘の大半は文章の質ではなく「事実が実機・他資料と合わない」だった（SSH 設定、環境変数、タスク一覧、資料間の件数不一致、古いログ例）。事実を 1 か所で定義し、実機で検証できるようにする。
+
+### A.1 事実の定義
+
+- 場所: `facts.yaml`（プロジェクト共通）と文書内 `facts:`（その文書専用）。ID はプロジェクト全体で一意（重複は ref/resolve）。
+- 種類:
+  - **値**: `value`（文字列・数値・文字列配列）。本文 `{{fact:ID}}` で値に展開（配列は「、」区切り）。
+  - **主張**: `claim`（文）。本文 `{{fact:ID}}` で claim に展開。`value` と `claim` の両方がある場合は claim を優先。
+  - **出力取り込み**: `capture`。本文 `{{capture:ID}}` はコードブロックとして配置（段落単独で書く）。
+- `verify`（任意）: 実機での確認方法。
+  ```yaml
+  verify:
+    shell: powershell | pwsh | sh | bash   # 省略時: Windows は powershell、それ以外は sh
+    run: <コマンド>
+    timeout: 30s                           # 省略時 30s
+    expect:                                # すべて AND。1 つ以上必須
+      exit: 0
+      equals: "1"                          # stdout（前後空白除去）と完全一致
+      stdout_contains: 文字列
+      stdout_match: 正規表現
+      lines_equal_value: true              # stdout の非空行の集合 == value（配列）の集合
+      max_ms: 45000                        # 実行時間の上限
+  ```
+- `capture`:
+  ```yaml
+  capture:
+    shell: ...                             # 省略時は verify と同じ既定
+    run: <コマンド>
+    normalize: [正規表現, ...]             # 一致部分を "…" に置換してから比較・保存
+  ```
+  スナップショットは `facts/snapshots/<ID>.txt`（git 管理）。未作成なら `{{capture}}` はビルドエラーにせず「（未取得）」と表示し、probe で `unknown`。
+
+### A.2 チェック
+
+| id | group | severity | 内容 |
+|----|-------|----------|------|
+| ref/resolve（拡張） | schema | error | 未定義の `{{fact}}` / `{{capture}}`、fact ID 重複 |
+| unused/defs（拡張） | rules | warn | どの文書からも参照されない fact（`facts.yaml` 分は `@facts` に出す） |
+| probe/&lt;ID&gt; | probe | error | fact ごとの実機検証。`@facts` の下に並ぶ |
+| fact/refs | rules | error | 文書が参照している fact のうち、直近の probe 結果が fail のもの |
+
+- probe は `--probe` 指定時のみ実行。未指定時は前回結果（`.test-runner/cache/probe/<ID>.json`: `{status, stdout, ms, host, at}`）を表示し、無ければ `skipped`。
+- 結果の表示にはマシン名と日時を付ける。
+- 実行前に件数を表示する（コマンドは YAML の記述をそのまま実行。読み取り専用にするのは書き手の責任）。
+- `--update-snapshots`: capture の出力をスナップショットに書き込み、その fact は pass。
+- シェルが無い（例: macOS で powershell 指定）→ `unknown`。
+- グループ順は `schema / rules / probe / online / review`。
+
+### A.3 対象外
+
+- SSH 経由のリモート検証（test-runner は検証対象のマシン上で実行する）
+- 禁止語リスト
