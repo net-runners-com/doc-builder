@@ -15,7 +15,7 @@ test("エスケープとインライン変換", () => {
   expect(esc("1. x #1 $5 [a]")).toBe("1\\. x \\#1 \\$5 \\[a\\]");
   expect(inline("**強調** と [リンク](https://e.x) と #")).toBe('#strong[強調] と #link("https://e.x")[リンク] と \\#');
   expect(hfContent("{{meta.title}} - {{page}}/{{pages}}", { title: "規約" })).toBe(
-    "[規約 \\- #context counter(page).display()/#context counter(page).final().first()]",
+    "[規約 \\- #context counter(page).display()\\/#context counter(page).final().first()]",
   );
 });
 
