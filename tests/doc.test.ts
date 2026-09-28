@@ -80,3 +80,13 @@ test("未定義の表ブロックと引用出典", () => {
   const d = build(MIN.guide.replace("body: 本文", "body: [{ table: t }, { quote: { source: s, text: q } }]"));
   expect(d.buildErrors.map((e) => e.finding.message)).toEqual(['引用の出典 "s" が未定義です', '未定義の表 "t"']);
 });
+
+test("文の分割と文 ID（ブロック内の通し番号）", async () => {
+  const { splitSentences } = await import("../src/parse/doc");
+  const s = "一文目。「二文目！」三文目\n四文目";
+  expect(splitSentences(s).map(([a, b]) => s.slice(a, b).trim())).toEqual(["一文目。", "「二文目！」", "三文目", "四文目"]);
+  const d = build(`kind: terms\n${meta("  effective: 2026-10-01\n")}articles:
+  - { id: fees, title: 料金, clauses: ["A です。B です。", "C です。"] }
+`);
+  expect(d.texts.filter((t) => t.blockId === "fees" && t.ptr.includes("clauses")).flatMap((t) => t.sentences.map((x) => x.id))).toEqual(["fees#1", "fees#2", "fees#3"]);
+});

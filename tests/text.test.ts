@@ -24,3 +24,9 @@ test("text/heading-in-body", async () => {
   expect(await messages(headingInBody, guide("## 見出し\n本文"))).toHaveLength(1);
   expect(await messages(headingInBody, guide("#タグ と 本文"))).toEqual([]);
 });
+
+test("指摘に文 ID が付く", async () => {
+  const d = guide("一文目です。二文目は TBD です。");
+  const f = await (await import("./helpers")).runCheck(placeholder, d);
+  expect(f[0].loc.sentence).toBe("intro#2");
+});

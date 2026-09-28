@@ -3,7 +3,7 @@ import type { ProbeResult } from "../facts/probe";
 import type { ClaudeRunner } from "../review/claude";
 import type { ResolvedLayout } from "../page/types";
 import type { ResolvedTheme } from "../theme/types";
-import type { Axis, Doc, Finding, Kind, Loc, Scope, Trigger } from "../types";
+import type { Axis, Doc, Finding, Kind, Loc, Scope, TextNode, Trigger } from "../types";
 
 export interface RunOptions {
   online?: boolean;
@@ -60,5 +60,9 @@ export interface ProjectCheck {
 export const defineCheck = (c: Check) => c;
 export const defineProjectCheck = (c: ProjectCheck) => c;
 
-/** テキストノードから loc を作る */
-export const at = (t: { blockId?: string; line?: number }) => ({ blockId: t.blockId, line: t.line });
+/** テキストノード（と文字位置）から loc を作る。位置があればその文の ID を付ける */
+export const at = (t: TextNode, offset?: number) => ({
+  blockId: t.blockId,
+  line: t.line,
+  sentence: offset === undefined ? undefined : t.sentences.find((s) => offset >= s.start && offset < s.end)?.id,
+});

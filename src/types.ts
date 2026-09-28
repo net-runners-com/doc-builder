@@ -45,12 +45,20 @@ export interface Def {
   line?: number;
   label?: string;
 }
+export interface Sentence {
+  /** <blockId>#<n>（ブロック内の本文で 1 始まり。見出しは <blockId>#title。blockId が無い場合は ptr） */
+  id: string;
+  /** raw 内の開始・終了位置 */
+  start: number;
+  end: number;
+}
 export interface TextNode {
   ptr: string;
   raw: string;
   blockId?: string;
   line?: number;
   block?: Record<string, unknown>;
+  sentences: Sentence[];
 }
 export type BuildErrorId = "schema/valid" | "ref/resolve" | "calc/eval";
 export interface Doc {

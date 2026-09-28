@@ -2,7 +2,8 @@ import { m } from "../../messages";
 import { TOKEN } from "../../parse/doc";
 import { at, defineCheck } from "../define";
 
-const plain = (s: string) => s.replace(TOKEN, " ");
+/** 埋め込みを同じ長さの空白に置き換える（文字位置を保つ） */
+const plain = (s: string) => s.replace(TOKEN, (x) => " ".repeat(x.length));
 
 export const glossaryAvoid = defineCheck({
   id: "glossary/avoid",
@@ -22,7 +23,7 @@ export const glossaryAvoid = defineCheck({
       const pairs = entries.flatMap((e) => e.avoid.map((a) => ({ a, term: e.term }))).sort((x, y) => y.a.length - x.a.length);
       for (const { a, term } of pairs) {
         if (!s.includes(a)) continue;
-        out.push(ctx.fail(m("check.glossary.avoid", { avoid: a, term }), at(t)));
+        out.push(ctx.fail(m("check.glossary.avoid", { avoid: a, term }), at(t, s.indexOf(a))));
         s = s.split(a).join("\u0000".repeat(a.length));
       }
     }
@@ -38,7 +39,7 @@ export const placeholder = defineCheck({
   severity: "error",
   run: (doc, ctx) =>
     doc.texts.flatMap((t) =>
-      [...plain(t.raw).matchAll(new RegExp(ctx.config.placeholders.join("|"), "g"))].map((x) => ctx.fail(m("check.placeholder", { text: x[0] }), at(t))),
+      [...plain(t.raw).matchAll(new RegExp(ctx.config.placeholders.join("|"), "g"))].map((x) => ctx.fail(m("check.placeholder", { text: x[0] }), at(t, x.index))),
     ),
 });
 

@@ -114,7 +114,7 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
   const quotes: { ptr: string; source: string; blockId?: string }[] = [];
   const tableBlocks: { ptr: string; id: string; blockId?: string }[] = [];
   const walk = (v: unknown, ptr: string, blockId?: string, block?: Record<string, unknown>) => {
-    if (typeof v === "string") texts.push({ ptr, raw: v, blockId, block, line: lineOf(ptr) });
+    if (typeof v === "string") texts.push({ ptr, raw: v, blockId, block, line: lineOf(ptr), sentences: [] });
     else if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${ptr}/${i}`, blockId, block));
     else if (v && typeof v === "object") {
       const o = v as Record<string, any>;
@@ -127,6 +127,22 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
     }
   };
   walk(data, "");
+
+  // --- 文の分割: ブロックごとに通し番号 ---
+  const counter = new Map<string, number>();
+  for (const t of texts) {
+    const key = t.blockId ?? t.ptr;
+    // 見出し（title）は本文の文と分けて <blockId>#title
+    if (t.ptr.endsWith("/title") && t.blockId) {
+      t.sentences.push({ id: `${key}#title`, start: 0, end: t.raw.length });
+      continue;
+    }
+    for (const [start, end] of splitSentences(t.raw)) {
+      const n = (counter.get(key) ?? 0) + 1;
+      counter.set(key, n);
+      t.sentences.push({ id: `${key}#${n}`, start, end });
+    }
+  }
 
   // --- 配置順（図・画像）と引用順（出典）---
   const quoteAt = new Map(quotes.map((q) => [q.ptr, q.source]));
@@ -214,4 +230,26 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
       err("ref/resolve", m("parse.undefined-table", { id: b.id }), { blockId: b.blockId, line: lineOf(b.ptr) });
 
   return doc;
+}
+
+/** 文の区切り: 「。！？」の直後（閉じ括弧は含める）と改行。空白だけの区間は捨てる */
+export function splitSentences(s: string): [number, number][] {
+  const out: [number, number][] = [];
+  let start = 0;
+  const push = (end: number) => {
+    if (s.slice(start, end).trim()) out.push([start, end]);
+    start = end;
+  };
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "\n") push(i + 1);
+    else if ("。！？!?".includes(c)) {
+      let j = i + 1;
+      while (j < s.length && "」』）)".includes(s[j])) j++;
+      push(j);
+      i = j - 1;
+    }
+  }
+  push(s.length);
+  return out;
 }

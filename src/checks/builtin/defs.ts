@@ -18,7 +18,7 @@ export const linkLocal = defineCheck({
       for (const x of t.raw.matchAll(LINK)) {
         const target = x[1].split("#")[0];
         if (external(x[1]) || !target) continue;
-        if (!existsSync(resolve(doc.dir, target))) out.push(ctx.fail(m("check.link.missing", { target: x[1] }), at(t)));
+        if (!existsSync(resolve(doc.dir, target))) out.push(ctx.fail(m("check.link.missing", { target: x[1] }), at(t, x.index)));
       }
     (doc.data.images ?? []).forEach((img: any, i: number) => {
       if (!existsSync(resolve(doc.dir, img.path)))
