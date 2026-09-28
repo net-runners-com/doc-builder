@@ -1,9 +1,9 @@
 import { m } from "./messages";
 import { parseArgs } from "node:util";
-import { resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { buildAll } from "./build";
 import { initProject } from "./init";
-import { exitCode, formatText } from "./runner/format";
+import { ICON, exitCode, formatText } from "./runner/format";
 import { runAll } from "./runner/run";
 import { startServer } from "./server";
 
@@ -36,7 +36,12 @@ switch (cmd) {
   }
   case "build": {
     const res = await buildAll(root, { paths, themes: v.theme?.split(","), layouts: v.layout?.split(","), wording: v.wording });
-    for (const o of res.outputs) console.log(`✓ ${o}`);
+    for (const o of res.outputs) {
+      const t = res.tests[relative(join(root, "dist"), o)];
+      const axes = t ? Object.entries(t.axes).map(([a, s]) => `${m(`axis.${a}`)}${ICON[s!.status]}${s!.findings || ""}`).join(" ") : "";
+      console.log(`${t ? ICON[t.status] : "✓"} ${relative(root, o)}  ${axes}`);
+    }
+    if (res.manifest) console.log(m("cli.manifest", { path: relative(root, res.manifest) }));
     for (const w of res.warnings) console.log(`! ${w}`);
     for (const e of res.errors) console.log(`✗ ${e}`);
     process.exit(res.errors.length ? 1 : 0);

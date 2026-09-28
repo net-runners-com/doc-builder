@@ -180,5 +180,6 @@
   "check.expect.not-contains": "{block}: 「{word}」を含んでいます",
   "check.expect.sentences": "{block}: 文が {n} 個あります（上限 {max}）",
   "check.expect.length": "{sentence}: 一文が {n} 文字あります（上限 {max}）",
-  "check.expect.actions": "{sentence}: 一文に動作が {n} 個あります（上限 {max}）"
+  "check.expect.actions": "{sentence}: 一文に動作が {n} 個あります（上限 {max}）",
+  "cli.manifest": "manifest: {path}"
 }

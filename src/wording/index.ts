@@ -50,7 +50,7 @@ export function listWordings(root: string): string[] {
 }
 
 /** プロジェクトの wordings/<name>.json を読む（"extends" で継承） */
-export function resolveWording(root: string, name = "default"): { strings: Strings; errors: string[] } {
+export function resolveWording(root: string, name = "default"): { strings: Strings; errors: string[]; files: string[] } {
   const errors: string[] = [];
   const chain: Record<string, string>[] = [];
   const seen: string[] = [];
@@ -77,7 +77,8 @@ export function resolveWording(root: string, name = "default"): { strings: Strin
     chain.unshift(rest);
     cur = ext;
   }
-  return { strings: Object.assign({}, defaultStrings(), ...chain), errors };
+  const files = [join(import.meta.dir, "default.json"), ...[...seen].reverse().map((x) => join(wordingsDir(root), `${x}.json`)).filter((f) => existsSync(f))];
+  return { strings: Object.assign({}, defaultStrings(), ...chain), errors, files };
 }
 
 export function t(s: Strings, key: string, vars: Record<string, string | number> = {}): string {

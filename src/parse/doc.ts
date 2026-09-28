@@ -55,6 +55,7 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
     placements,
     citations,
     strings: defaultStrings(),
+    wordingFiles: [],
     facts,
     factRefs,
     buildErrors,
@@ -73,7 +74,8 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
   }
   doc.kind = data.kind;
   for (const e of validateStrings(data.strings ?? {})) err("schema/valid", e.message, { line: lineOf(`/strings/${e.key}`) });
-  const w = opts.root ? resolveWording(opts.root, opts.wording ?? data.wording ?? "default") : { strings: defaultStrings(), errors: [] };
+  const w = opts.root ? resolveWording(opts.root, opts.wording ?? data.wording ?? "default") : { strings: defaultStrings(), errors: [], files: [] };
+  doc.wordingFiles = w.files;
   for (const e of w.errors) err("schema/valid", m("parse.wording", { error: e }), { line: lineOf("/wording") });
   const s = (doc.strings = { ...w.strings, ...(data.strings ?? {}) });
   if (buildErrors.length) return doc;

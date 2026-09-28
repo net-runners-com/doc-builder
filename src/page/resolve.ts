@@ -74,5 +74,6 @@ export function resolveLayout(root: string, spec: unknown, reg: Registry = regis
     // 壊れたレイアウトでも出力できるよう、壊れた区画は空にする
     for (const r of REGIONS) if (!Array.isArray(merged[r]) || validateLayout({ [r]: merged[r] }, reg).length) merged[r] = [];
   }
-  return { ...merged, id, errors };
+  const files = [...seen].reverse().map((x) => join(layoutsDir(root), `${x}.yaml`)).filter((f) => existsSync(f));
+  return { ...merged, id, errors, files };
 }

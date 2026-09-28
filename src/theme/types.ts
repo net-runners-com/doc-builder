@@ -32,4 +32,6 @@ export interface Theme {
 export interface ResolvedTheme extends Theme {
   id: string;
   errors: string[];
+  /** 解決に使ったファイル（継承の親から順） */
+  files: string[];
 }

@@ -16,6 +16,8 @@ export interface PageLayout {
 export interface ResolvedLayout extends PageLayout {
   id: string;
   errors: string[];
+  /** 解決に使ったファイル（継承の親から順） */
+  files: string[];
 }
 
 export const nodeName = (n: LNode) => (typeof n === "string" ? n : Object.keys(n)[0]);

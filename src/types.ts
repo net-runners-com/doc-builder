@@ -73,6 +73,8 @@ export interface Doc {
   citations: string[];
   /** 固定文言・書式（表記スタイル。組み込み → wordings/<name>.json → 文書の strings:） */
   strings: Strings;
+  /** 表記スタイルの解決に使ったファイル */
+  wordingFiles: string[];
   /** 文書内で定義した fact */
   facts: Record<string, Fact>;
   /** 本文から参照した fact / capture の ID */

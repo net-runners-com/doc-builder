@@ -18,6 +18,7 @@ const page = (over: Partial<ResolvedLayout> = {}): ResolvedLayout => ({
   footer: [],
   id: "t",
   errors: [],
+  files: [],
   ...over,
 });
 const md = (d: ReturnType<typeof docOf>, p = page()) =>

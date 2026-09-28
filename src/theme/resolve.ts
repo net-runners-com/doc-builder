@@ -22,8 +22,10 @@ function absolutize(t: Partial, base: string): Partial {
   return out;
 }
 
+export const themeFile = (root: string, id: string) => join(themesDir(root), `${id}.yaml`);
+
 function readTheme(root: string, id: string): Partial {
-  const p = join(themesDir(root), `${id}.yaml`);
+  const p = themeFile(root, id);
   if (!existsSync(p)) throw new Error(m("theme.not-found", { id, path: p }));
   const data = parse(readFileSync(p, "utf8"));
   if (!data || typeof data !== "object") throw new Error(m("theme.empty", { id }));
@@ -77,9 +79,15 @@ export function resolveTheme(root: string, spec: unknown, docDir?: string): Reso
   delete merged.extends;
   errors.push(...validateTheme(merged));
   if (errors.length) {
-    return { ...(merged as Theme), id, errors };
+    return { ...(merged as Theme), id, errors, files: themeFiles(root, seen) };
   }
-  return { ...(merged as Theme), id, errors };
+  return { ...(merged as Theme), id, errors, files: themeFiles(root, seen) };
+}
+
+/** 解決チェーンのファイル（default を含む、親から順） */
+function themeFiles(root: string, seen: string[]): string[] {
+  const ids = seen.includes("default") ? [...seen].reverse() : ["default", ...[...seen].reverse()];
+  return ids.map((id) => themeFile(root, id)).filter((p) => existsSync(p));
 }
 
 function cmpVersion(a: string, b: string): number {
