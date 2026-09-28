@@ -1,0 +1,21 @@
+{
+  "name": "doc-test-runner",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun src/cli.ts test",
+    "build": "bun src/cli.ts build",
+    "serve": "bun src/cli.ts serve"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "ajv": "^8.20.0",
+    "vega": "^6.4.0",
+    "vega-lite": "^6.4.3",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "^7.0.2"
+  }
+}
