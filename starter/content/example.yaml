@@ -1,0 +1,13 @@
+kind: guide
+meta:
+  title: サンプル説明書
+  version: 0.1.0
+  updated: 2026-01-01
+  owner: 作成部署
+sections:
+  - id: overview
+    title: 概要
+    body: この文書は doc-test-runner の雛形です。content/ に YAML を追加して bun run test で検証します。
+  - id: next
+    title: 次に読むもの
+    body: 書式は README.md、設計は docs/ を参照してください。

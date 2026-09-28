@@ -1,6 +1,8 @@
 import { m } from "./messages";
 import { parseArgs } from "node:util";
+import { resolve } from "node:path";
 import { buildAll } from "./build";
+import { initProject } from "./init";
 import { exitCode, formatText } from "./runner/format";
 import { runAll } from "./runner/run";
 import { startServer } from "./server";
@@ -20,6 +22,7 @@ const { values: v, positionals } = parseArgs({
     wording: { type: "string" },
     port: { type: "string" },
     "register-superset": { type: "boolean", default: false },
+    force: { type: "boolean", default: false },
   },
 });
 const [cmd, ...paths] = positionals;
@@ -45,7 +48,14 @@ switch (cmd) {
     if (v["register-superset"]) console.log(m("cli.registered"));
     break;
   }
+  case "init": {
+    const r = initProject(resolve(paths[0] ?? "."), { force: v.force });
+    for (const f of r.created) console.log(`+ ${f}`);
+    for (const f of r.skipped) console.log(`= ${f}`);
+    console.log(r.message);
+    break;
+  }
   default:
-    console.error("usage: bun src/cli.ts <test|build|serve> [paths...] [--online] [--review] [--probe] [--update-snapshots] [--theme a,b] [--layout a,b] [--wording name] [--strict] [--json]");
+    console.error(m("cli.usage"));
     process.exit(2);
 }

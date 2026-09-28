@@ -11,18 +11,15 @@
   "scope.section": "章",
   "scope.document": "文書",
   "scope.corpus": "資料間",
-
   "run.skipped.schema": "スキーマ違反のため未実行",
   "run.skipped.probe": "未実行（--probe で実行）",
   "run.skipped.online": "未実行（--online で実行）",
   "run.skipped.review": "未実行（--review で実行）",
   "run.exception": "例外: {error}",
-
   "cli.summary": "pass {pass} / fail {fail} / warn {warn} / unknown {unknown} / skipped {skipped}",
   "cli.skipped-count": "{n} 件: {note}",
   "cli.urls": "URL 一覧: {path}",
   "cli.registered": "~/.superset/hosted-urls.json に登録しました",
-
   "ui.all": "全体",
   "ui.all-pass": "すべて合格",
   "ui.count": "{n}件",
@@ -36,17 +33,14 @@
   "ui.running": "実行中…",
   "ui.url-test": "{doc} テスト",
   "ui.url-preview": "{doc} プレビュー",
-
   "build.skipped-errors": "{doc}: ビルドエラー {n} 件のため出力しません（bun run test で確認）",
   "build.theme-error": "{doc}: テーマ \"{id}\" にエラーがあります: {error}",
   "build.layout-error": "{doc}: レイアウト \"{id}\" にエラーがあります: {error}",
   "build.figure-error": "{doc}: 図 \"{id}\": {error}",
   "build.pdf-error": "{doc}: PDF: {error}",
   "build.md-ignored": "md: テーマ（色・フォント・用紙・透かし）、レイアウトの header / footer、md.ts の無い部品 は Markdown に反映されません",
-
   "error.tool-missing": "{tool} が見つかりません（{hint}）",
   "extends.cycle": "extends が循環しています: {chain}",
-
   "parse.yaml": "YAML 構文エラー: {error}",
   "parse.wording": "表記スタイル: {error}",
   "parse.dup-id": "ID \"{id}\" が重複しています（{a} と {b}）",
@@ -63,7 +57,6 @@
   "parse.undefined-field": "未定義のフィールド \"{name}\"",
   "parse.undefined-quote-source": "引用の出典 \"{id}\" が未定義です",
   "parse.undefined-table": "未定義の表 \"{id}\"",
-
   "calc.expected": "\"{token}\" が必要です（{got}）",
   "calc.end": "終端",
   "calc.incomplete": "式が途中で終わっています",
@@ -73,13 +66,11 @@
   "calc.undefined": "未定義の値 \"{name}\"",
   "calc.div-zero": "0 で割っています",
   "calc.not-list": "\"{name}\" はリストではありません",
-
   "schema.root": "文書のルートはマッピング（key: value）でなければなりません",
   "schema.kind": "kind は {kinds} のいずれかです（現在: {kind}）",
   "schema.required": "必須項目 \"{name}\" がありません",
   "schema.unknown": "未知の項目 \"{name}\"",
   "schema.invalid": "不正な値",
-
   "probe.no-shell": "シェル \"{shell}\" が見つかりません",
   "probe.timeout": "タイムアウト（{ms}ms）",
   "probe.exit": "終了コード {got}（期待 {want}）",
@@ -94,7 +85,6 @@
   "probe.snapshot-diff": "出力が資料のスナップショットと違います:\n--- 資料\n{want}--- 実機\n{got}",
   "probe.no-verify": "verify なし",
   "probe.capture-error": "capture: {error}",
-
   "layout.root": "レイアウトのルートはマッピングでなければなりません",
   "layout.unknown-key": "未知の項目 \"{key}\"（使えるのは {keys}）",
   "layout.start-at": "page_numbers.start_at は {values} のいずれかです",
@@ -108,17 +98,14 @@
   "layout.empty": "レイアウト \"{id}\" が空か不正です",
   "layout.no-name": "レイアウト名がありません（文書の layout: か runner.yaml の defaultLayout）",
   "layout.no-page-numbers": "page_numbers がありません",
-
   "company.missing": "company.yaml がありません",
   "component.dir-missing": "components/ がありません",
   "component.bad-name": "components/{name}: 部品名は英小文字・数字・ハイフンにしてください",
   "component.no-typ": "components/{name}/render.typ がありません",
   "component.bad-region": "components/{name}: 未知の区画 {regions}",
   "component.no-regions": "components/{name}: regions がありません",
-
   "theme.not-found": "テーマ \"{id}\" が見つかりません（{path}）",
   "theme.empty": "テーマ \"{id}\" が空か不正です",
-
   "wording.not-found": "表記スタイル \"{id}\" が見つかりません（{path}）",
   "wording.unknown-key": "未知の文字列キー \"{key}\"",
   "wording.not-string": "\"{key}\" は文字列で書いてください",
@@ -126,16 +113,13 @@
   "wording.bad-var": "\"{key}\" では {{var}} は使えません（使える変数: {allowed}）",
   "wording.missing-var": "\"{key}\" には {{var}} が必要です",
   "wording.none": "なし",
-
   "render.data-form": "data は \"{{ref:表ID}}\" 形式で指定してください（{data}）",
   "render.no-table": "data が参照する表 \"{id}\" がありません",
   "render.no-column": "表 \"{table}\" に列 \"{column}\" がありません",
   "render.not-number": "列 \"{column}\" に数値でない値があります: {value}",
-
   "review.exit": "claude が終了コード {code}: {output}",
   "review.no-json": "JSON が見つかりません",
   "review.bad-output": "レビュー出力の形式が不正: {output}",
-
   "check.glossary.avoid": "「{avoid}」→「{term}」",
   "check.placeholder": "未記入のプレースホルダ「{text}」",
   "check.heading-in-body": "本文に Markdown 見出しがあります（見出しは sections / children で構造化してください）",
@@ -172,5 +156,7 @@
   "check.online.quote-status": "引用元が HTTP {status}: {url}",
   "check.online.quote-missing": "引用文が引用元ページに見つかりません: 「{quote}」",
   "check.review.failed": "レビュー失敗: {error}",
-  "check.review.no-reason": "不合格（理由なし）"
+  "check.review.no-reason": "不合格（理由なし）",
+  "init.done": "作成 {created} 件、既存のためスキップ {skipped} 件（--force で上書き）",
+  "cli.usage": "usage: bun src/cli.ts <test|build|serve|init> [paths...] [--online] [--review] [--probe] [--update-snapshots] [--theme a,b] [--layout a,b] [--wording name] [--strict] [--json] [--force]"
 }
