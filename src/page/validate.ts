@@ -51,11 +51,12 @@ export function validateLayout(data: any, reg: Registry, partial = false): Layou
     const target = props === undefined ? (isScalarSchema(def.props) ? undefined : null) : props;
     const v = compile(def.props);
     const ok = target === null ? v(null) || v({}) : v(target);
-    if (!ok)
+    if (!ok && props === undefined) errs.push({ ptr: pptr, message: `${name}: 設定が必要です` });
+    else if (!ok)
       for (const e of v.errors ?? []) {
         if (e.keyword === "anyOf" && (v.errors?.length ?? 0) > 1) continue;
         const extra = (e.params as any).additionalProperty ?? (e.params as any).missingProperty;
-        errs.push({ ptr: pptr + e.instancePath, message: `${name}${e.instancePath}: ${props === undefined ? "設定が必要です" : e.message}${extra ? ` (${extra})` : ""}` });
+        errs.push({ ptr: pptr + e.instancePath, message: `${name}${e.instancePath}: ${e.message}${extra ? ` (${extra})` : ""}` });
       }
     if (def.container && Array.isArray(props?.children)) props.children.forEach((c: LNode, i: number) => node(c, region, `${pptr}/children/${i}`));
   }

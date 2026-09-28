@@ -20,6 +20,7 @@
   "section.toc": "目次",
   "section.history": "改訂履歴",
   "label.expected": "期待結果",
+  "label.separator": "：",
   "label.total": "合計",
   "label.accessed": "（閲覧日: {date}）",
   "label.tel": "TEL {tel}",

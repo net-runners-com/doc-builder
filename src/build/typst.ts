@@ -42,7 +42,7 @@ function node(n: Node, asset: (p: string, id: string) => string, s: Strings): st
     case "ul":
       return n.items.map((s) => `- ${inline(s)}`).join("\n") + "\n";
     case "kv":
-      return `#strong[${esc(n.label)}：] ${inline(n.text)}\n`;
+      return `#strong[${esc(n.label + t(s, "label.separator"))}] ${inline(n.text)}\n`;
     case "code":
       return `#raw(block: true, ${str(n.text.replace(/\n$/, ""))})\n`;
     case "table": {
@@ -53,7 +53,7 @@ function node(n: Node, asset: (p: string, id: string) => string, s: Strings): st
     case "quote":
       return `#quote(${n.cite ? `attribution: [${esc(n.cite)}]` : ""})[${inline(n.text)}]\n`;
     case "figure":
-      return `#figure(image(${str(asset(n.path, n.id))}, alt: ${str(n.alt)})${n.caption ? `, caption: [${inline(n.caption)}]` : ""})\n`;
+      return `#figure(image(${str(asset(n.path, n.id))}, alt: ${str(n.alt)}, width: eval(theme.typography.figure_width))${n.caption ? `, caption: [${inline(n.caption)}]` : ""})\n`;
     case "sources":
       return `= ${esc(t(s, "section.sources"))}\n${n.items.map((it) => `${esc(it.label)} ${esc(it.title)}. #link(${str(it.url)}) ${esc(t(s, "label.accessed", { date: it.accessed }))}\n`).join("\n")}`;
   }

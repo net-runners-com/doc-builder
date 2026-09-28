@@ -1,0 +1,12 @@
+{
+  "number.article": "{n}.",
+  "number.step": "STEP {n}",
+  "heading.article": "{label} {title}",
+  "heading.step": "{label}　{title}",
+  "section.purpose": "このマニュアルでできること",
+  "section.prerequisites": "はじめに用意するもの",
+  "section.steps": "やり方",
+  "section.troubleshooting": "うまくいかないとき",
+  "label.expected": "こうなればOK",
+  "label.confidential": "取扱注意"
+}

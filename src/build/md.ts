@@ -39,7 +39,7 @@ export function emitMarkdown(
         out.push(...n.items.map((s) => `- ${s}`), "");
         break;
       case "kv":
-        out.push(`**${n.label}：** ${n.text}`, "");
+        out.push(`**${n.label}${t(data.strings, "label.separator")}** ${n.text}`, "");
         break;
       case "code": {
         const fence = n.text.includes("```") ? "~~~~" : "```";

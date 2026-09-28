@@ -1,5 +1,6 @@
 // doc-test-runner 既定テンプレート（見た目のみ。値はすべて theme から受け取る）。
 // theme.template で差し替える場合も同じ引数を受け取ること。区画はレイアウトから組み立て済みの content で渡される。
+// 改ページはレイアウトの pagebreak 部品で明示する（テンプレートは区画の前後で改ページしない。表紙だけは独立ページ）。
 #let template(theme: (:), title: "", cover: none, front: none, back: none, header: none, footer: none, start: "front", watermark: none, body) = {
   let col = theme.colors
   let ty = theme.typography
@@ -28,26 +29,23 @@
   show raw: set text(font: theme.fonts.mono)
   show link: set text(fill: accent)
   set figure(numbering: none)
-  set image(width: eval(ty.figure_width))
   set table(stroke: eval(ty.table_stroke) + fg.transparentize(eval(ty.table_line_fade)), inset: eval(ty.table_inset), fill: (x, y) => if y == 0 { primary })
   show table.cell.where(y: 0): set text(fill: bg, weight: "bold")
   set quote(block: true)
   show quote: it => block(stroke: (left: eval(ty.quote_rule) + accent), inset: (left: eval(ty.quote_inset), y: eval(ty.quote_inset_y)), it.body + if it.attribution != none { align(right, text(size: eval(ty.attribution_size))[— #it.attribution]) })
 
+  // ページ設定は途中で変えない（set page は改ページを起こす）。番号の表示開始は状態で切り替える。
+  let numbered = state("dtr-numbered", start == "cover")
+  set page(header: hdr, footer: context if numbered.get() { ftr })
   if cover != none {
     page(header: none, footer: if start == "cover" { ftr } else { none }, cover)
   }
+  let begin = { numbered.update(true); counter(page).update(1) }
   if front != none {
-    set page(header: hdr, footer: if start == "body" { none } else { ftr })
-    if start == "front" { counter(page).update(1) }
+    if start == "front" { begin }
     front
-    pagebreak(weak: true)
   }
-  set page(header: hdr, footer: ftr)
-  if start == "body" or (start == "front" and front == none) { counter(page).update(1) }
+  if start == "body" or (start == "front" and front == none) { begin }
   body
-  if back != none {
-    pagebreak(weak: true)
-    back
-  }
+  if back != none { back }
 }

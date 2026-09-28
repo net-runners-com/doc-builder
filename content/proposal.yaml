@@ -2,12 +2,20 @@
 # R1（合計不一致）は calc のため発生しない
 kind: proposal
 theme: sakura
+layout: formal
 meta:
   title: ノートポケット 導入提案書
   version: 0.9.0
   updated: 2026-09-20
   owner: 株式会社サンプルワークス 営業部
   client: 架空商事株式会社 総務部 御中
+  number: SW-PRO-2026-014
+  approvals:
+    - { role: 承認 }
+    - { role: 確認, name: 佐藤, date: 2026-09-19 }
+    - { role: 作成, name: 鈴木, date: 2026-09-18 }
+  history:
+    - { version: 0.9.0, date: 2026-09-20, note: 初版（社内レビュー用） }
 sections:
   - id: background
     title: 背景と課題
