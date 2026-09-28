@@ -5,6 +5,7 @@ import { join } from "node:path";
 import * as vega from "vega";
 import * as vl from "vega-lite";
 import { requireTool } from "../errors";
+import { buildGraph } from "../flow";
 import type { Doc } from "../types";
 
 const hash = (s: string) => createHash("sha1").update(s).digest("hex").slice(0, 16);
@@ -108,13 +109,26 @@ export const renderOptions = (
   d2Pad: cfg.render.d2Pad,
 });
 
+/** 手順の定義から D2 のフロー図を作る（type: flow） */
+export function flowD2(doc: Doc): string {
+  const q = (s: string) => JSON.stringify(s);
+  const g = buildGraph(doc.data.steps ?? []);
+  const lines = ["direction: down"];
+  for (const s of doc.data.steps ?? []) lines.push(`${q(s.id)}: ${q(`${doc.defs[s.id]?.label ?? s.id} ${doc.expand(s.title, s)}`)}`);
+  for (const [from, es] of g.edges) for (const e of es) lines.push(`${q(from)} -> ${q(e.to)}${e.cond ? `: ${q(doc.expand(e.cond))}` : ""}`);
+  return lines.join("\n") + "\n";
+}
+
 /** 図を毎回描画する（再利用しない）。出力先は呼び出し側の作業ディレクトリ */
 export async function renderFigures(doc: Doc, workDir: string, o: RenderOptions) {
   const svgs: Record<string, string> = {};
   const errors: { id: string; error: Error }[] = [];
   for (const f of doc.data.figures ?? []) {
     try {
-      svgs[f.id] = f.type === "diagram" ? await renderD2(f.source, workDir, o.d2Pad) : await renderChart(doc, f, workDir, o.chart);
+      svgs[f.id] =
+        f.type === "diagram" ? await renderD2(f.source, workDir, o.d2Pad)
+        : f.type === "flow" ? await renderD2(flowD2(doc), workDir, o.d2Pad)
+        : await renderChart(doc, f, workDir, o.chart);
     } catch (e) {
       errors.push({ id: f.id, error: e as Error });
     }

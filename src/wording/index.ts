@@ -22,6 +22,8 @@ export const VARS: Record<string, string[]> = {
   "label.accessed": ["date"],
   "label.tel": ["tel"],
   "unit.yen": ["n"],
+  "label.branch": ["cond", "target"],
+  "label.goto": ["target"],
 };
 /** 必須の変数（書式が意味をなさなくなるもの） */
 export const REQUIRED_VARS: Record<string, string[]> = {

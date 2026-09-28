@@ -123,6 +123,10 @@ export function buildContent(doc: Doc, assets: Assets, snapshot: (id: string) =>
         nodes.push({ t: "h", level: 3, id: st.id, text: t(s, "heading.step", { label: doc.defs[st.id].label!, title: x(st.title) }) });
         nodes.push({ t: "ol", items: st.actions.map((a: string) => x(a, st)) });
         nodes.push({ t: "kv", key: "label.expected", label: t(s, "label.expected"), text: x(st.expected, st) });
+        const lbl = (id: string) => doc.defs[id]?.label ?? id;
+        for (const b of st.branches ?? []) nodes.push({ t: "p", text: t(s, "label.branch", { cond: x(b.if), target: lbl(b.goto) }) });
+        if (st.next) nodes.push({ t: "p", text: t(s, "label.goto", { target: lbl(st.next) }) });
+        if (st.end) nodes.push({ t: "p", text: t(s, "label.end") });
       }
       if (d.troubleshooting?.length) {
         fixed(2, "section.troubleshooting");

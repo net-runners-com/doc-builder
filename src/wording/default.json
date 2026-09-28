@@ -47,5 +47,8 @@
   "field.audience": "対象",
   "field.number": "文書番号",
   "chart.series": "系列",
-  "chart.value": "値"
+  "chart.value": "値",
+  "label.branch": "{cond}場合は{target}へ",
+  "label.goto": "次は{target}へ",
+  "label.end": "以上で完了です"
 }

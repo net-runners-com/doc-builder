@@ -158,5 +158,14 @@
   "check.review.failed": "レビュー失敗: {error}",
   "check.review.no-reason": "不合格（理由なし）",
   "init.done": "作成 {created} 件、既存のためスキップ {skipped} 件（--force で上書き）",
-  "cli.usage": "usage: bun src/cli.ts <test|build|serve|init> [paths...] [--online] [--review] [--probe] [--update-snapshots] [--theme a,b] [--layout a,b] [--wording name] [--strict] [--json] [--force]"
+  "cli.usage": "usage: bun src/cli.ts <test|build|serve|init> [paths...] [--online] [--review] [--probe] [--update-snapshots] [--theme a,b] [--layout a,b] [--wording name] [--strict] [--json] [--force]",
+  "check.flow.dangling": "{from} の行き先 \"{to}\" は存在しない手順です",
+  "check.flow.unknown-step": "フロー「{flow}」が存在しない手順 \"{id}\" を指定しています",
+  "check.flow.unreachable": "{step} には最初の手順からたどり着けません",
+  "check.flow.no-end": "{step} から先に進むと終わりにたどり着けません",
+  "check.flow.cycle": "意図しない繰り返しがあります: {steps}（繰り返す手順には loop: true を付けてください）",
+  "check.flow.unmet": "{step} の前提 {states} が、たどり着く経路のどこかで満たされていません",
+  "check.flow.bad-choice": "フロー「{flow}」: {step} に分岐「{choice}」がありません",
+  "check.flow.scenario-loop": "フロー「{flow}」が終わりません: {path}",
+  "check.flow.wrong-end": "フロー「{flow}」の到達先が {got} です（期待 {want}）: {path}"
 }

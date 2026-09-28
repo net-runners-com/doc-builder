@@ -85,7 +85,7 @@ const common = {
       additionalProperties: false,
       properties: {
         id,
-        type: { enum: ["diagram", "chart"] },
+        type: { enum: ["diagram", "chart", "flow"] },
         caption: str,
         source: str,
         chart: { enum: ["bar", "line", "pie"] },
@@ -147,7 +147,31 @@ const kinds: Record<Kind, { required: string[]; metaExtra: string[]; props: Reco
         items: {
           type: "object",
           required: ["id", "title", "actions", "expected"],
-          properties: { id, title: str, actions: { ...strs, minItems: 1 }, expected: str },
+          properties: {
+            id,
+            title: str,
+            actions: { ...strs, minItems: 1 },
+            expected: str,
+            requires: { type: "array", items: id },
+            produces: { type: "array", items: id },
+            next: id,
+            end: { type: "boolean" },
+            loop: { type: "boolean" },
+            branches: {
+              type: "array",
+              items: { type: "object", required: ["if", "goto"], additionalProperties: false, properties: { if: str, goto: id } },
+            },
+          },
+        },
+      },
+      initial_state: { type: "array", items: id },
+      flows: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["name", "expect_end"],
+          additionalProperties: false,
+          properties: { name: str, choose: { type: "object", additionalProperties: str }, expect_end: id },
         },
       },
       troubleshooting: {

@@ -12,7 +12,7 @@ const fails = (doc: string) => report.results.filter((r) => r.doc === doc && r.a
 test.each([
   ["service-guide", ["glossary/avoid", "link/local", "text/placeholder"]], // S1 S2 S3
   ["terms-of-service", ["glossary/avoid", "ref/resolve", "terms/notice-period"]], // T3 T2 T4
-  ["setup-procedure", ["link/local"]], // P3
+  ["setup-procedure", ["flow/state", "link/local"]], // P3, L1
   ["setup-procedure-p2", ["schema/valid"]], // P2
   ["proposal", ["schedule/order"]], // R2
 ])("%s の不合格が正解どおり", (doc, expected) => {
