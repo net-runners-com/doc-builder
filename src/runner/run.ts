@@ -6,6 +6,7 @@ import type { BaseCtx, Check, CheckCtx, RunOptions } from "../checks/define";
 import { cacheDir, loadConfig, type Config } from "../config";
 import { buildDoc } from "../parse/doc";
 import { loadYaml } from "../parse/yaml";
+import { reviewChecks } from "../review/checks";
 import { resolveTheme } from "../theme/resolve";
 import type { CheckResult, Doc, Finding, Report } from "../types";
 
@@ -32,9 +33,6 @@ async function loadUserChecks(root: string): Promise<Check[]> {
   }
   return out;
 }
-
-let extraChecks: (root: string, doc: Doc) => Check[] = () => [];
-export const setExtraChecks = (f: typeof extraChecks) => (extraChecks = f);
 
 export function loadDoc(root: string, config: Config, file: string, themeOverride?: string) {
   const src = readFileSync(file, "utf8");
@@ -87,7 +85,7 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
     const { doc, theme } = loadDoc(root, config, file, options.theme?.split(",")[0]);
     docs.push(doc.name);
     const ctx: CheckCtx = { ...base(doc.name), theme };
-    const checks = [...builtinChecks, ...userChecks, ...extraChecks(root, doc)].filter(
+    const checks = [...builtinChecks, ...userChecks, ...reviewChecks(root, doc)].filter(
       (c) => c.group === "schema" || !doc.kind || c.kinds.includes("*") || c.kinds.includes(doc.kind),
     );
     const broken = doc.buildErrors.some((e) => e.checkId === "schema/valid");
