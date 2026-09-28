@@ -1,6 +1,7 @@
 import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
 import { requireTool } from "../errors";
+import { installedFonts } from "../theme/fonts";
 import { watermarkActive } from "../theme/resolve";
 import type { ResolvedTheme } from "../theme/types";
 import type { Doc } from "../types";
@@ -67,6 +68,13 @@ function node(n: Node, asset: (p: string, id: string) => string): string {
   }
 }
 
+/** 未インストールのフォントを除く（typst の警告を避ける）。全滅なら元のまま */
+function availableFonts(f: ResolvedTheme["fonts"]) {
+  const have = installedFonts();
+  const pick = (l: string[]) => (l.some((x) => have.has(x)) ? l.filter((x) => have.has(x)) : l);
+  return { body: pick(f.body), heading: pick(f.heading), mono: pick(f.mono) };
+}
+
 /** Typst ソースを組み立てる（work ディレクトリにアセットをコピーする） */
 export function emitTypst(l: Layout, theme: ResolvedTheme, doc: Doc, work: string): string {
   rmSync(work, { recursive: true, force: true });
@@ -83,7 +91,7 @@ export function emitTypst(l: Layout, theme: ResolvedTheme, doc: Doc, work: strin
     paper: PAPER[theme.page.size],
     margin: theme.page.margin,
     colors: theme.colors,
-    fonts: theme.fonts,
+    fonts: availableFonts(theme.fonts),
     cover: { enabled: theme.cover.enabled, logo },
     toc: theme.toc,
     start_at: theme.footer.start_at,

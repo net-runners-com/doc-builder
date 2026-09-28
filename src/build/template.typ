@@ -35,7 +35,7 @@
   set table(stroke: 0.5pt + fg.transparentize(60%), inset: 6pt, fill: (x, y) => if y == 0 { primary })
   show table.cell.where(y: 0): set text(fill: bg, weight: "bold")
   set quote(block: true)
-  show quote: set block(stroke: (left: 2pt + accent), inset: (left: 10pt, y: 4pt))
+  show quote: it => block(stroke: (left: 2pt + accent), inset: (left: 10pt, y: 4pt), it.body + if it.attribution != none { align(right, text(size: 9pt)[— #it.attribution]) })
 
   if theme.cover.enabled {
     page(header: none, footer: if start == "cover" { ftr } else { none })[
