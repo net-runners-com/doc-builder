@@ -506,3 +506,81 @@ footer: [要素...]
 - 図は毎回描画し、実行ごとの作業ディレクトリ（`.test-runner/work/run-*`、終了時に削除）に出す。
 - メモリ上のキャッシュ（部品定義・フォント一覧・スキーマ）も持たない。
 - `facts/snapshots/` は承認済みの期待出力（git 管理）でありキャッシュではない。
+
+---
+
+## 追補 D: 観点 × 範囲によるテストの仕分け（2026-09-28）
+
+1 つのテストが事実・表現・構造を同時に判定すると結果が破綻する。すべてのテストは**観点を 1 つ、範囲を 1 つ**だけ持つ。判定は原則システム（決定的）。統計モデル（誤字検出モデル）は検証の結果不採用（それらしい漢字への置換を拾えず、括弧内で誤検出）。
+
+### D.1 観点（axis）と範囲（scope）
+
+| axis | 中身 | 判定 |
+|------|------|------|
+| structure | 必須項目・採番・参照・順序・型・テーマ/レイアウト/表記スタイルの妥当性 | スキーマ・参照解決 |
+| surface | 誤字脱字・表記ゆれ・用字用語・禁止語・連語の誤り・助詞の重複・括弧・全半角 | 形態素解析（kuromoji）＋ textlint ＋辞書 |
+| fact | 実機・出典・計算・資料間一致 | fact / probe / online / calc |
+| logic | 手順フロー（到達・終端・分岐網羅・状態の連鎖・シナリオ） | グラフ解析 |
+| expression | 文長・読点数・文体混在・曖昧語・要注意表現・1 文 1 動作・項目ごとの expect | 形態素解析＋辞書＋数値 |
+| review | LLM による補助判定 | 警告のみ・既定で実行しない |
+
+scope: `word` / `sentence` / `item`（条・手順・表・図）/ `section` / `document` / `corpus`（資料間）。
+
+- 各チェックは `axis` と `scope` を宣言する。結果ツリーは「文書 → axis → チェック → 指摘」、指摘は scope に応じた位置（`blockId#文番号`）を持つ。
+- 旧 group（schema/rules/probe/online/review）は廃止し、実行条件は `trigger: always | probe | online | review` で表す。
+- ゲート: structure が fail の文書は他の axis を実行しない。surface の指摘がある文は expression で評価しない（同じ文に二重の指摘をしない）。
+- 結果の要約は文書ごとに axis 別の件数（1 つの合否に畳まない）。exit code は error の fail があれば 1（review は常に warn）。
+
+### D.2 文の分割
+
+本文テキストを文（「。」「！」「？」、改行、箇条書き要素）に分け、`<blockId>#<n>`（1 始まり）の ID を振る。surface / expression の指摘は文 ID と文内の位置を持つ。
+
+### D.3 surface / expression のルールと辞書
+
+- 設定と辞書はすべて `lint/` に置く（コードに語を持たない）:
+  - `lint/textlint.yaml`: 使う textlint ルールと設定（既定は ja-technical-writing 相当）。ルールごとに axis と severity を割り当てる。
+  - `lint/dict/*.yaml`: 表記ゆれ（prh 形式）、誤変換（`暗合 → 暗号`）、連語（`{ noun: [設定, 画面, ファイル], particle: を, wrong: [聞く], right: 開く }`）、曖昧語、要注意表現（kind 別）、未知語の許可リスト（製品名・固有名詞）。
+- 形態素解析による組み込み判定: 未知語（辞書・用語集・許可リスト・fact の値・英数字記号列を除く）、同一文書内の表記ゆれ（同じ読み・品詞で表記が違う）、1 文の動詞数（手順の actions）。
+- 事実の遮蔽: `{{fact}}` `{{calc}}` `{{ref}}` などの埋め込みは、surface / expression の判定前に記号に置き換える（事実の値を表現として判定しない）。
+
+### D.4 項目ごとの expect
+
+各ブロック（条・手順・節）に判定条件を書ける。単体テストの matcher に相当。
+```yaml
+expect:
+  - contains_fact: sales-contact
+  - not_contains_vague: true
+  - max_sentence_length: 80
+  - max_actions_per_sentence: 1
+  - contains: [期限]
+  - not_contains: [など]
+```
+自由文の `ask:` は review 扱い（警告のみ）。
+
+### D.5 フロー（kind: procedure）
+
+```yaml
+steps:
+  - id: verify
+    requires: [signup-done]
+    produces: [email-verified]
+    next: plan                         # 省略時は次の手順
+    branches:
+      - { if: 確認メールが届かない, goto: resend }
+  - id: done
+    end: true
+flows:
+  - { name: メールが届かない場合, choose: { verify: 確認メールが届かない }, expect_end: done }
+```
+logic の検査: 全手順の到達可能性、全経路の終端到達、意図しないループ（`loop: true` のない循環）、分岐先の未定義、`requires` が全経路で先行手順の `produces` により満たされるか、`flows` シナリオの到達先。フロー図（D2）は手順定義から生成できる。
+
+### D.6 review（LLM）
+
+- axis = review、常に warn、`--review` 指定時のみ。
+- 観点に `why_not_rule`（ルールにできない理由）を必須にする。
+- 事実の遮蔽（D.3）をした本文を渡し、事実の正誤は判定対象外と指示する。
+
+### D.7 メッセージと init
+
+- チェック結果のメッセージは `src/messages/default.json`（ID → 文面、変数 `{x}`）。プロジェクトの `messages.json` で上書き可。コードは ID で参照する。
+- `bun src/cli.ts init [dir]`: themes / layouts / components / wordings / reviews / lint / runner.yaml / company.yaml / content サンプルを複製する。既存ファイルは上書きしない（`--force` で上書き）。
