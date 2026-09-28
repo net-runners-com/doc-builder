@@ -70,7 +70,7 @@ export function buildDoc(path: string, src: string, numbering: Numbering): Doc {
   const defineSections = (list: any[], ptr: string, prefix: string) =>
     list.forEach((s, i) => {
       const num = prefix ? `${prefix}.${i + 1}` : `${i + 1}`;
-      const label = numbering.heading === "none" ? `「${s.title}」` : `「${num} ${s.title}」`;
+      const label = numbering.heading === "none" ? `「${s.title}」` : `「${prefix ? num : num + "."} ${s.title}」`;
       define(s.id, { type: "section", ptr: `${ptr}/${i}`, label });
       if (s.children) defineSections(s.children, `${ptr}/${i}/children`, num);
     });
