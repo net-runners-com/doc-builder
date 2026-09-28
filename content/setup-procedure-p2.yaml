@@ -1,0 +1,14 @@
+# 欠陥: P2 期待結果の欠落（スキーマ違反）
+kind: procedure
+meta:
+  title: ノートポケット 初期設定手順書（抜粋）
+  version: 1.0.3
+  updated: 2026-09-10
+  owner: 株式会社サンプルワークス カスタマーサクセス部
+  audience: 管理者
+  estimated_time: 5分
+purpose: プランを選択する。
+steps:
+  - id: plan
+    title: プランを選択する
+    actions: [管理画面の「設定」→「プラン」を開く。, 利用するプランを選択する。]

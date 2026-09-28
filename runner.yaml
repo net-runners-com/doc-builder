@@ -1,0 +1,6 @@
+contentDir: content
+defaultTheme: default
+review:
+  model: sonnet
+sourceMaxAgeDays: 365
+port: 4600

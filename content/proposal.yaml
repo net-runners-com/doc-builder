@@ -1,0 +1,64 @@
+# 欠陥: R2 スケジュールの時系列逆転 / R3 曖昧な定量（レビュー）/ R4 次のステップ不足（レビュー）
+# R1（合計不一致）は calc のため発生しない
+kind: proposal
+theme: sakura
+meta:
+  title: ノートポケット 導入提案書
+  version: 0.9.0
+  updated: 2026-09-20
+  owner: 株式会社サンプルワークス 営業部
+  client: 架空商事株式会社 総務部 御中
+sections:
+  - id: background
+    title: 背景と課題
+    body:
+      - 貴社総務部では、議事録や社内手順をファイルサーバーとメールで管理されています。ヒアリングの結果、次の課題を確認しました。
+      - 最新版の資料がどれか分からず古い手順で作業してしまうこと、資料を探すのに 1 日あたり平均 30 分かかっていること{{cite:survey}}、退職者の PC にしかない資料があり引き継ぎに漏れが出ていることです。
+      - quote: { source: survey, text: 資料の検索に費やす時間は一日平均三十分であった。 }
+  - id: proposal
+    title: 提案内容
+    body: ノートポケット ビジネスプランを総務部 20 名で導入し、議事録と社内手順を一元管理します。
+  - id: effect
+    title: 導入効果
+    body:
+      - "{{ref:effects}}と{{ref:effect-chart}}に導入効果の見込みを示します。引き継ぎ漏れも大幅に削減できます。"
+      - { table: effects }
+      - "{{fig:effect-chart}}"
+  - id: cost
+    title: 費用
+    body: [{ table: costs }]
+  - id: plan
+    title: 導入スケジュール
+    body: [{ table: schedule }]
+  - id: next
+    title: 次のステップ
+    body: ご不明点があれば、担当営業までお問い合わせください。
+tables:
+  - id: effects
+    title: 1人あたり1日の作業時間（分）
+    columns: [項目, 現状, 導入後]
+    rows:
+      - [資料検索, 30, 5]
+      - [版の確認, 10, 1]
+costs:
+  - { id: biz, item: ビジネスプラン（月額）, unit_price: 1200, qty: 20 }
+  - { id: onboarding, item: オンボーディング支援, unit_price: 0, qty: 1 }
+total: "{{calc:sum(costs, unit_price*qty)}}円"
+schedule:
+  - { date: 2026-10-05, task: 契約・組織アカウント作成 }
+  - { date: 2026-10-12, task: 既存資料の移行 }
+  - { date: 2026-10-19, task: 操作説明会 }
+  - { date: 2026-10-12, task: 本番運用開始 }
+figures:
+  - id: effect-chart
+    type: chart
+    caption: "図{{n}} 導入前後の作業時間"
+    chart: bar
+    data: "{{ref:effects}}"
+    x: 項目
+    y: [現状, 導入後]
+sources:
+  - id: survey
+    url: https://example.com/
+    title: （架空）総務部ヒアリング記録 2026
+    accessed: 2026-09-15

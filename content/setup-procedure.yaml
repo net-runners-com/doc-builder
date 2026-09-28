@@ -1,0 +1,47 @@
+# 欠陥: P3 リンク切れ（templates/members.csv）
+# P1（欠番）は自動採番のため発生しない。P2 は setup-procedure-p2.yaml
+kind: procedure
+meta:
+  title: ノートポケット 初期設定手順書
+  version: 1.0.3
+  updated: 2026-09-10
+  owner: 株式会社サンプルワークス カスタマーサクセス部
+  audience: 管理者
+  estimated_time: 15分
+purpose: チーム管理者が組織アカウントを作成し、メンバーを招待して利用を開始できる状態にする。{{fig:flow}}
+prerequisites:
+  - 管理者のメールアドレスを用意していること
+  - 招待するメンバーのメールアドレス一覧（CSV 形式）を用意していること
+steps:
+  - id: signup
+    title: 組織アカウントを作成する
+    actions: [https://app.example.com/signup を開く。, 「組織として登録」を選択する。, 組織名・メールアドレス・パスワードを入力し「登録」をクリックする。]
+    expected: 入力したメールアドレスに確認メールが届く。
+  - id: verify
+    title: メールアドレスを確認する
+    actions: [確認メール内の「メールアドレスを確認」をクリックする。]
+    expected: 管理画面のダッシュボードが表示される。
+  - id: plan
+    title: プランを選択する
+    actions: [管理画面の「設定」→「プラン」を開く。, 利用するプランを選択し「確定」をクリックする。]
+    expected: 選択したプラン名がダッシュボード右上に表示される。
+  - id: invite
+    title: メンバーを招待する
+    actions: [「設定」→「メンバー」を開く。, 「CSV で一括招待」から CSV をアップロードし「招待を送信」をクリックする。]
+    expected: 招待したメンバーの状態が「招待中」と表示される。
+troubleshooting:
+  - symptom: 確認メールが届かない
+    action: 迷惑メールフォルダを確認する。10 分以上届かない場合は{{ref:signup}}からやり直す。
+  - symptom: CSV のアップロードに失敗する
+    action: 文字コードが UTF-8 か確認する。列の形式は[CSV テンプレート](./templates/members.csv)を参照する。
+figures:
+  - id: flow
+    type: diagram
+    caption: "図{{n}} 初期設定の流れ"
+    source: |
+      direction: right
+      signup: 組織アカウント作成
+      verify: メール確認
+      plan: プラン選択
+      invite: メンバー招待
+      signup -> verify -> plan -> invite

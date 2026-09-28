@@ -29,6 +29,11 @@ export function formatText(report: Report): string {
     for (const g of GROUPS) {
       const gs = rs.filter((r) => r.group === g);
       if (!gs.length) continue;
+      const notes = new Set(gs.map((r) => r.note));
+      if (gs.every((r) => r.status === "skipped") && notes.size === 1) {
+        lines.push(`  ${ICON.skipped} ${g}  (${gs.length} 件: ${gs[0].note})`);
+        continue;
+      }
       lines.push(`  ${ICON[worst(gs.map((r) => r.status))]} ${g}`);
       for (const r of gs) {
         if (r.status === "pass") continue;
