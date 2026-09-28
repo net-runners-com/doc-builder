@@ -2,13 +2,20 @@ import type { Fact } from "./facts/types";
 import type { Strings } from "./wording";
 export type Kind = "terms" | "procedure" | "proposal" | "guide";
 export const KINDS: Kind[] = ["terms", "procedure", "proposal", "guide"];
-export type Group = "schema" | "rules" | "probe" | "online" | "review";
-export const GROUPS: Group[] = ["schema", "rules", "probe", "online", "review"];
+/** 観点（何を確かめるか）。この順で表示し、structure の致命的エラーがあれば他を実行しない */
+export type Axis = "structure" | "surface" | "fact" | "logic" | "expression" | "review";
+export const AXES: Axis[] = ["structure", "surface", "fact", "logic", "expression", "review"];
+/** 範囲（どこを見るか） */
+export type Scope = "word" | "sentence" | "item" | "section" | "document" | "corpus";
+/** 実行条件 */
+export type Trigger = "always" | "probe" | "online" | "review";
 export type Status = "pass" | "fail" | "warn" | "unknown" | "skipped";
 
 export interface Loc {
   doc: string;
   blockId?: string;
+  /** 文 ID（<blockId>#<n>） */
+  sentence?: string;
   line?: number;
 }
 export interface Finding {
@@ -17,7 +24,8 @@ export interface Finding {
 }
 export interface CheckResult {
   doc: string;
-  group: Group;
+  axis: Axis;
+  scope: Scope;
   checkId: string;
   status: Status;
   findings: Finding[];

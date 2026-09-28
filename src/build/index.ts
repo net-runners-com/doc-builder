@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadConfig } from "../config";
@@ -8,7 +9,7 @@ import { readSnapshot } from "../facts/load";
 import { loadCompany } from "../page/company";
 import { registry } from "../page/components";
 import { buildContent } from "./content";
-import { emitMarkdown, MD_IGNORED } from "./md";
+import { emitMarkdown } from "./md";
 import { emitPdf } from "./typst";
 
 export interface BuildResult {
@@ -31,16 +32,16 @@ export async function buildAll(
       const { doc, theme, layout: page } = loadDoc(root, config, file, { theme: themeName, layout: layoutName, wording: opts.wording });
       const outDir = join(root, "dist", theme.id, page.id);
       if (doc.buildErrors.length) {
-        res.errors.push(`${doc.name}: ビルドエラー ${doc.buildErrors.length} 件のため出力しません（bun run test で確認）`);
+        res.errors.push(m("build.skipped-errors", { doc: doc.name, n: doc.buildErrors.length }));
         continue;
       }
-      if (theme.errors.length) res.warnings.push(`${doc.name}: テーマ "${theme.id}" にエラーがあります: ${theme.errors[0]}`);
-      if (page.errors.length) res.warnings.push(`${doc.name}: レイアウト "${page.id}" にエラーがあります: ${page.errors[0]}`);
+      if (theme.errors.length) res.warnings.push(m("build.theme-error", { doc: doc.name, id: theme.id, error: theme.errors[0] }));
+      if (page.errors.length) res.warnings.push(m("build.layout-error", { doc: doc.name, id: page.id, error: page.errors[0] }));
       const reg = registry(root);
       const company = loadCompany(root).company;
-      const { svgs, errors } = await renderFigures(doc, join(root, ".test-runner", "build", theme.id, page.id, doc.name + ".render"), renderOptions(theme, config));
+      const { svgs, errors } = await renderFigures(doc, join(root, ".test-runner", "build", theme.id, page.id, doc.name + ".render"), renderOptions(theme, config, doc.strings));
       if (errors.length) {
-        res.errors.push(...errors.map((e) => `${doc.name}: 図 "${e.id}": ${e.error.message}`));
+        res.errors.push(...errors.map((e) => m("build.figure-error", { doc: doc.name, id: e.id, error: e.error.message })));
         continue;
       }
       const l = buildContent(doc, svgs, (id: string) => readSnapshot(root, id));
@@ -50,7 +51,7 @@ export async function buildAll(
         writeFileSync(p, emitMarkdown(l, page, reg, { meta: doc.data.meta, company, strings: doc.strings }, outDir, doc.name));
         res.outputs.push(p);
         if (!warnedMd) {
-          res.warnings.push(`md: ${MD_IGNORED.join("、")} は Markdown に反映されません`);
+          res.warnings.push(m("build.md-ignored"));
           warnedMd = true;
         }
       }
@@ -58,7 +59,7 @@ export async function buildAll(
         try {
           res.outputs.push(await emitPdf(l, theme, doc, join(root, ".test-runner", "build", theme.id, page.id, doc.name), join(outDir, `${doc.name}.pdf`), { page, reg, company }));
         } catch (e) {
-          (e instanceof ToolMissing ? res.warnings : res.errors).push(`${doc.name}: PDF: ${(e as Error).message}`);
+          (e instanceof ToolMissing ? res.warnings : res.errors).push(m("build.pdf-error", { doc: doc.name, error: (e as Error).message }));
         }
       }
     }

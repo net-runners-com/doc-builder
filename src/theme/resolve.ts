@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { parse } from "yaml";
@@ -23,9 +24,9 @@ function absolutize(t: Partial, base: string): Partial {
 
 function readTheme(root: string, id: string): Partial {
   const p = join(themesDir(root), `${id}.yaml`);
-  if (!existsSync(p)) throw new Error(`テーマ "${id}" が見つかりません（${p}）`);
+  if (!existsSync(p)) throw new Error(m("theme.not-found", { id, path: p }));
   const data = parse(readFileSync(p, "utf8"));
-  if (!data || typeof data !== "object") throw new Error(`テーマ "${id}" が空か不正です`);
+  if (!data || typeof data !== "object") throw new Error(m("theme.empty", { id }));
   return absolutize(data, dirname(p));
 }
 
@@ -49,7 +50,7 @@ export function resolveTheme(root: string, spec: unknown, docDir?: string): Reso
   let cur: string | undefined = id;
   while (cur) {
     if (seen.includes(cur)) {
-      errors.push(`extends が循環しています: ${[...seen, cur].join(" → ")}`);
+      errors.push(m("extends.cycle", { chain: [...seen, cur].join(" → ") }));
       break;
     }
     seen.push(cur);

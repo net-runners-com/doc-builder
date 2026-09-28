@@ -3,7 +3,7 @@ import type { ProbeResult } from "../facts/probe";
 import type { ClaudeRunner } from "../review/claude";
 import type { ResolvedLayout } from "../page/types";
 import type { ResolvedTheme } from "../theme/types";
-import type { Doc, Finding, Group, Kind, Loc } from "../types";
+import type { Axis, Doc, Finding, Kind, Loc, Scope, Trigger } from "../types";
 
 export interface RunOptions {
   online?: boolean;
@@ -36,7 +36,10 @@ export interface CheckCtx extends BaseCtx {
 
 export interface Check {
   id: string;
-  group: Group;
+  axis: Axis;
+  scope: Scope;
+  /** 省略時 always */
+  trigger?: Trigger;
   kinds: (Kind | "*")[];
   severity: "error" | "warn";
   run(doc: Doc, ctx: CheckCtx): Finding[] | Promise<Finding[]>;
@@ -47,7 +50,9 @@ export type CheckOutput = Finding[] | { findings: Finding[]; note?: string };
 /** 文書に紐づかないチェック（テーマ・fact など）。結果の doc は "@themes" / "@facts" */
 export interface ProjectCheck {
   id: string;
-  group: Group;
+  axis: Axis;
+  scope: Scope;
+  trigger?: Trigger;
   severity: "error" | "warn";
   run(ctx: BaseCtx): CheckOutput | Promise<CheckOutput>;
 }

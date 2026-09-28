@@ -528,7 +528,7 @@ scope: `word` / `sentence` / `item`（条・手順・表・図）/ `section` / `
 
 - 各チェックは `axis` と `scope` を宣言する。結果ツリーは「文書 → axis → チェック → 指摘」、指摘は scope に応じた位置（`blockId#文番号`）を持つ。
 - 旧 group（schema/rules/probe/online/review）は廃止し、実行条件は `trigger: always | probe | online | review` で表す。
-- ゲート: structure が fail の文書は他の axis を実行しない。surface の指摘がある文は expression で評価しない（同じ文に二重の指摘をしない）。
+- ゲート: structure の致命的エラー（YAML 構文・スキーマ違反 = schema/valid）がある文書は他の axis を実行しない（参照切れ等では止めない）。surface の指摘がある文は expression で評価しない（同じ文に二重の指摘をしない）。
 - 結果の要約は文書ごとに axis 別の件数（1 つの合否に畳まない）。exit code は error の fail があれば 1（review は常に warn）。
 
 ### D.2 文の分割

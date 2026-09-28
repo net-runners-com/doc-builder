@@ -38,14 +38,14 @@ const run = async (c: Check, d: ReturnType<typeof doc>, online: boolean) => {
   }
 };
 
-test("--online なしは Skip（前回結果も使わない）", async () => {
-  expect(await run(onlineUrl, doc("/ok", "x"), false)).toStartWith("Skip");
+test("online 系は --online 指定時だけ実行される（trigger）", () => {
+  expect(onlineUrl.trigger).toBe("online");
+  expect(onlineQuote.trigger).toBe("online");
 });
 
 test("引用の照合は空白・全半角を正規化する", async () => {
   expect(await run(onlineQuote, doc("/ok", "資料の検索に費やす時間は一日平均30分であった。"), true)).toBe("pass");
   expect(await run(onlineQuote, doc("/ok", "一日平均60分"), true)).toStartWith("fail: 引用文が");
-  expect(await run(onlineUrl, doc("/ok", "x"), false)).toStartWith("Skip");
 });
 
 test("404 は fail、403 は unknown", async () => {

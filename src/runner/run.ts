@@ -13,7 +13,8 @@ import { loadYaml } from "../parse/yaml";
 import { reviewChecks } from "../review/checks";
 import { resolveLayout } from "../page/resolve";
 import { resolveTheme } from "../theme/resolve";
-import type { CheckResult, Report } from "../types";
+import { m, useMessages } from "../messages";
+import type { Axis, CheckResult, Report, Scope, Trigger } from "../types";
 
 export const PROJECT_DOC = "@themes";
 
@@ -54,12 +55,17 @@ export function loadDoc(root: string, config: Config, file: string, over: LoadOv
   return { doc, theme, layout };
 }
 
+const TRIGGER_FLAG = { probe: "probe", online: "online", review: "review" } as const;
+
 async function runOne(
-  check: { id: string; group: CheckResult["group"]; severity: "error" | "warn" },
+  check: { id: string; axis: Axis; scope: Scope; trigger?: Trigger; severity: "error" | "warn" },
   docNameStr: string,
+  options: RunOptions,
   fn: () => CheckOutput | Promise<CheckOutput>,
 ): Promise<CheckResult> {
-  const base = { doc: docNameStr, group: check.group, checkId: check.id };
+  const base = { doc: docNameStr, axis: check.axis, scope: check.scope, checkId: check.id };
+  const trig = check.trigger ?? "always";
+  if (trig !== "always" && !options[TRIGGER_FLAG[trig]]) return { ...base, status: "skipped", findings: [], note: m(`run.skipped.${trig}`) };
   try {
     const out = await fn();
     const { findings, note } = Array.isArray(out) ? { findings: out, note: undefined } : out;
@@ -68,13 +74,14 @@ async function runOne(
   } catch (e) {
     if (e instanceof Skip) return { ...base, status: "skipped", findings: [], note: e.message };
     if (e instanceof Unknown) return { ...base, status: "unknown", findings: [], note: e.message };
-    return { ...base, status: "unknown", findings: [], note: `例外: ${(e as Error).stack ?? e}` };
+    return { ...base, status: "unknown", findings: [], note: m("run.exception", { error: (e as Error).stack ?? String(e) }) };
   }
 }
 
 export async function runAll(root: string, options: RunOptions = {}): Promise<Report> {
   const startedAt = new Date().toISOString();
   const config = loadConfig(root);
+  useMessages(root);
   const today = options.today ?? new Date();
   const userChecks = await loadUserChecks(root);
   const results: CheckResult[] = [];
@@ -94,7 +101,7 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
   const project = async (doc: string, checks: ProjectCheck[]) => {
     for (const c of checks) {
       const ctx = base(doc);
-      results.push(await runOne(c, doc, () => c.run(ctx)));
+      results.push(await runOne(c, doc, options, () => c.run(ctx)));
     }
   };
 
@@ -109,15 +116,15 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
   for (const { doc, theme, layout } of loaded) {
     const ctx: CheckCtx = { ...base(doc.name), theme, layout };
     const checks = [...builtinChecks, ...userChecks, ...reviewChecks(root, doc)].filter(
-      (c) => c.group === "schema" || !doc.kind || c.kinds.includes("*") || c.kinds.includes(doc.kind),
+      (c) => !doc.kind || c.kinds.includes("*") || c.kinds.includes(doc.kind),
     );
     const broken = doc.buildErrors.some((e) => e.checkId === "schema/valid");
     for (const c of checks) {
-      if (broken && c.group !== "schema") {
-        results.push({ doc: doc.name, group: c.group, checkId: c.id, status: "skipped", findings: [], note: "スキーマ違反のため未実行" });
+      if (broken && c.id !== "schema/valid") {
+        results.push({ doc: doc.name, axis: c.axis, scope: c.scope, checkId: c.id, status: "skipped", findings: [], note: m("run.skipped.schema") });
         continue;
       }
-      results.push(await runOne(c, doc.name, () => c.run(doc, ctx)));
+      results.push(await runOne(c, doc.name, options, () => c.run(doc, ctx)));
     }
   }
   if (!options.paths?.length) await project(FACTS_DOC, [unusedFacts(docs)]);

@@ -7,6 +7,7 @@ import { discover, docName, loadDoc, runAll } from "../runner/run";
 import { listLayouts } from "../page/resolve";
 import { listThemes } from "../theme/resolve";
 import type { Report } from "../types";
+import { m, useMessages } from "../messages";
 import { parseFocus, previewPage, treePage } from "./html";
 import { registerSuperset, urlEntries, writeUrls } from "./urls";
 
@@ -20,6 +21,7 @@ export interface ServeOptions {
 
 export async function startServer(root: string, opts: ServeOptions = {}) {
   const config = loadConfig(root);
+  useMessages(root);
   let report: Report = await runAll(root, opts.runOptions);
   let version = 1;
   let running = false;
@@ -51,22 +53,22 @@ export async function startServer(root: string, opts: ServeOptions = {}) {
         return Response.redirect(url.searchParams.get("back") ?? "/", 303);
       }
       if (p === "/" || p.startsWith("/t/")) return html(treePage(root, report, parseFocus(p), files(), version));
-      const m = p.match(/^\/(p|pdf)\/([^/]+)$/);
-      if (m) {
-        const doc = decodeURIComponent(m[2]);
+      const route = p.match(/^\/(p|pdf)\/([^/]+)$/);
+      if (route) {
+        const doc = decodeURIComponent(route[2]);
         const file = files()[doc];
-        if (!file) return html("文書が見つかりません", 404);
+        if (!file) return html(m("ui.doc-not-found"), 404);
         const theme = url.searchParams.get("theme") || undefined;
         const layout = url.searchParams.get("layout") || undefined;
-        if (m[1] === "p") return html(previewPage(doc, { themes: listThemes(root), layouts: listLayouts(root) }, { theme, layout }, version));
+        if (route[1] === "p") return html(previewPage(doc, { themes: listThemes(root), layouts: listLayouts(root) }, { theme, layout }, version));
         const res = await buildAll(root, { paths: [doc], themes: theme ? [theme] : undefined, layouts: layout ? [layout] : undefined, formats: ["pdf"] });
         const l = loadDoc(root, config, file, { theme, layout });
         const pdf = join(root, "dist", l.theme.id, l.layout.id, `${doc}.pdf`);
         if (res.errors.length || !existsSync(pdf))
-          return new Response([...res.errors, ...res.warnings].join("\n") || "PDF を生成できませんでした", { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } });
+          return new Response([...res.errors, ...res.warnings].join("\n") || m("ui.pdf-failed"), { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } });
         return new Response(Bun.file(pdf), { headers: { "content-type": "application/pdf" } });
       }
-      return html("not found", 404);
+      return html(m("ui.not-found"), 404);
     },
   });
 

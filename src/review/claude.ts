@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { join } from "node:path";
 import { requireTool } from "../errors";
 
@@ -43,19 +44,19 @@ export const defaultClaude: ClaudeRunner = async ({ prompt, schema, model, addDi
   const timer = setTimeout(() => p.kill(), timeoutMs);
   const [out, err, code] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text(), p.exited]);
   clearTimeout(timer);
-  if (code !== 0) throw new Error(`claude が終了コード ${code}: ${(err || out).slice(0, 300)}`);
+  if (code !== 0) throw new Error(m("review.exit", { code, output: (err || out).slice(0, 300) }));
   return out;
 };
 
 const firstJson = (s: string) => {
-  const m = s.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error("JSON が見つかりません");
-  return JSON.parse(m[0]);
+  const hit = s.match(/\{[\s\S]*\}/);
+  if (!hit) throw new Error(m("review.no-json"));
+  return JSON.parse(hit[0]);
 };
 
 export function parseReviewOutput(stdout: string): ReviewOutput {
   const outer = JSON.parse(stdout);
   const v = outer.structured_output ?? (typeof outer.result === "string" ? firstJson(outer.result) : outer.result ?? outer);
-  if (!v || (v.verdict !== "pass" && v.verdict !== "fail") || !Array.isArray(v.findings)) throw new Error(`レビュー出力の形式が不正: ${JSON.stringify(v).slice(0, 200)}`);
+  if (!v || (v.verdict !== "pass" && v.verdict !== "fail") || !Array.isArray(v.findings)) throw new Error(m("review.bad-output", { output: JSON.stringify(v).slice(0, 200) }));
   return { verdict: v.verdict, findings: v.findings.filter((f: any) => typeof f?.reason === "string") };
 }

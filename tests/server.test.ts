@@ -21,14 +21,14 @@ afterAll(() => {
 });
 
 test("parseFocus", () => {
-  expect(parseFocus("/t/g/rules/text/placeholder/0")).toEqual({ doc: "g", group: "rules", checkId: "text/placeholder", n: 0 });
-  expect(parseFocus("/t/g")).toEqual({ doc: "g", group: undefined, checkId: undefined, n: undefined });
+  expect(parseFocus("/t/g/surface/text/placeholder/0")).toEqual({ doc: "g", axis: "surface", checkId: "text/placeholder", n: 0 });
+  expect(parseFocus("/t/g")).toEqual({ doc: "g", axis: undefined, checkId: undefined, n: undefined });
 });
 
 test("ツリーと固有 URL", async () => {
   const top = await (await fetch(s.base + "/")).text();
-  expect(top).toContain('href="/t/g/rules/text/placeholder"');
-  const one = await (await fetch(s.base + "/t/g/rules/text/placeholder/0")).text();
+  expect(top).toContain('href="/t/g/surface/text/placeholder"');
+  const one = await (await fetch(s.base + "/t/g/surface/text/placeholder/0")).text();
   expect(one).toContain("未記入のプレースホルダ「TBD」");
   expect(one).toContain('<span class="hl">');
 });

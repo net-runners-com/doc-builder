@@ -1,3 +1,4 @@
+import { m } from "../../messages";
 import { Skip, Unknown } from "../../errors";
 import type { Finding } from "../../types";
 import { defineCheck, type CheckCtx } from "../define";
@@ -37,13 +38,12 @@ async function perSource(
   ctx: CheckCtx,
   items: { url: string; judge: (f: Fetched) => Finding | "ok" }[],
 ): Promise<Finding[]> {
-  if (!ctx.options.online) throw new Skip("未実行（--online で実行）");
   const out: Finding[] = [];
   const unknown: string[] = [];
   for (const it of items) {
     const f = await fetchPage(it.url, ctx);
-    if (f.status === 0) unknown.push(`${it.url}: 取得失敗 (${f.text})`);
-    else if (ctx.config.online.blockedStatuses.includes(f.status)) unknown.push(`${it.url}: HTTP ${f.status}（遮断の可能性）`);
+    if (f.status === 0) unknown.push(m("check.online.fetch-failed", { url: it.url, error: f.text }));
+    else if (ctx.config.online.blockedStatuses.includes(f.status)) unknown.push(m("check.online.blocked", { url: it.url, status: f.status }));
     else {
       const r = it.judge(f);
       if (r !== "ok") out.push(r);
@@ -56,7 +56,9 @@ async function perSource(
 
 export const onlineUrl = defineCheck({
   id: "online/url",
-  group: "online",
+  axis: "fact",
+  scope: "item",
+  trigger: "online",
   kinds: ["*"],
   severity: "error",
   run: (doc, ctx) =>
@@ -65,14 +67,16 @@ export const onlineUrl = defineCheck({
       (doc.data.sources ?? []).map((s: any, i: number) => ({
         url: s.url,
         judge: (f: Fetched) =>
-          f.status >= 400 ? ctx.fail(`出典 URL が HTTP ${f.status}: ${s.url}`, { blockId: s.id, line: doc.lineOf(`/sources/${i}/url`) }) : "ok",
+          f.status >= 400 ? ctx.fail(m("check.online.url-status", { status: f.status, url: s.url }), { blockId: s.id, line: doc.lineOf(`/sources/${i}/url`) }) : "ok",
       })),
     ),
 });
 
 export const onlineQuote = defineCheck({
   id: "online/quote",
-  group: "online",
+  axis: "fact",
+  scope: "sentence",
+  trigger: "online",
   kinds: ["*"],
   severity: "error",
   run(doc, ctx) {
@@ -88,10 +92,10 @@ export const onlineQuote = defineCheck({
       quotes.map(({ t, src }) => ({
         url: src.url,
         judge: (f: Fetched) => {
-          if (f.status >= 400) return ctx.fail(`引用元が HTTP ${f.status}: ${src.url}`, { blockId: t.blockId, line: t.line });
+          if (f.status >= 400) return ctx.fail(m("check.online.quote-status", { status: f.status, url: src.url }), { blockId: t.blockId, line: t.line });
           return normalize(pageText(f.text)).includes(normalize(t.raw))
             ? "ok"
-            : ctx.fail(`引用文が引用元ページに見つかりません: 「${t.raw.slice(0, 40)}」`, { blockId: t.blockId, line: t.line });
+            : ctx.fail(m("check.online.quote-missing", { quote: t.raw.slice(0, 40) }), { blockId: t.blockId, line: t.line });
         },
       })),
     );

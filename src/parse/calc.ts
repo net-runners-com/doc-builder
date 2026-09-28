@@ -1,3 +1,4 @@
+import { m } from "../messages";
 type Ast =
   | { t: "num"; v: number }
   | { t: "id"; name: string }
@@ -11,8 +12,8 @@ function parseExpr(src: string): Ast {
   const peek = () => toks[i];
   const eat = (t?: string) => {
     const v = toks[i++];
-    if (t !== undefined && v !== t) throw new Error(`"${t}" が必要です（${v ?? "終端"}）`);
-    if (v === undefined) throw new Error("式が途中で終わっています");
+    if (t !== undefined && v !== t) throw new Error(m("calc.expected", { token: t, got: v ?? m("calc.end") }));
+    if (v === undefined) throw new Error(m("calc.incomplete"));
     return v;
   };
   const expr = (): Ast => {
@@ -36,7 +37,7 @@ function parseExpr(src: string): Ast {
     if (/^\d/.test(v)) return { t: "num", v: Number(v) };
     if (/^[A-Za-z_]/.test(v)) {
       if (peek() !== "(") return { t: "id", name: v };
-      if (v !== "sum" && v !== "count") throw new Error(`未知の関数 "${v}"`);
+      if (v !== "sum" && v !== "count") throw new Error(m("calc.unknown-fn", { name: v }));
       eat("(");
       const list = eat();
       let arg: Ast | undefined;
@@ -47,10 +48,10 @@ function parseExpr(src: string): Ast {
       eat(")");
       return { t: "call", fn: v, list, arg };
     }
-    throw new Error(`不正な字句 "${v}"`);
+    throw new Error(m("calc.bad-token", { token: v }));
   };
   const ast = expr();
-  if (i < toks.length) throw new Error(`余分な字句 "${toks[i]}"`);
+  if (i < toks.length) throw new Error(m("calc.extra-token", { token: toks[i] }));
   return ast;
 }
 
@@ -62,18 +63,18 @@ function evalAst(a: Ast, data: any, row?: Record<string, unknown>): number {
       return -evalAst(a.e, data, row);
     case "id": {
       const v = row && typeof row[a.name] === "number" ? row[a.name] : data?.[a.name];
-      if (typeof v !== "number") throw new Error(`未定義の値 "${a.name}"`);
+      if (typeof v !== "number") throw new Error(m("calc.undefined", { name: a.name }));
       return v;
     }
     case "bin": {
       const l = evalAst(a.l, data, row);
       const r = evalAst(a.r, data, row);
-      if (a.op === "/" && r === 0) throw new Error("0 で割っています");
+      if (a.op === "/" && r === 0) throw new Error(m("calc.div-zero"));
       return a.op === "+" ? l + r : a.op === "-" ? l - r : a.op === "*" ? l * r : l / r;
     }
     case "call": {
       const list = data?.[a.list];
-      if (!Array.isArray(list)) throw new Error(`"${a.list}" はリストではありません`);
+      if (!Array.isArray(list)) throw new Error(m("calc.not-list", { name: a.list }));
       if (a.fn === "count") return list.length;
       return list.reduce((s: number, r: Record<string, unknown>) => s + evalAst(a.arg!, data, r), 0);
     }

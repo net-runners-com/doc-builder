@@ -45,5 +45,7 @@
   "field.owner": "作成",
   "field.client": "宛先",
   "field.audience": "対象",
-  "field.number": "文書番号"
+  "field.number": "文書番号",
+  "chart.series": "系列",
+  "chart.value": "値"
 }

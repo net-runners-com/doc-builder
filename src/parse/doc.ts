@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { basename, dirname, extname } from "node:path";
 import { validateDoc } from "../schema/doc";
 import { factText, type Fact } from "../facts/types";
@@ -62,7 +63,7 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
   };
 
   if (loaded.error) {
-    err("schema/valid", `YAML 構文エラー: ${loaded.error.message}`, { line: loaded.error.line });
+    err("schema/valid", m("parse.yaml", { error: loaded.error.message }), { line: loaded.error.line });
     return doc;
   }
   const schemaErrors = validateDoc(data);
@@ -73,14 +74,14 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
   doc.kind = data.kind;
   for (const e of validateStrings(data.strings ?? {})) err("schema/valid", e.message, { line: lineOf(`/strings/${e.key}`) });
   const w = opts.root ? resolveWording(opts.root, opts.wording ?? data.wording ?? "default") : { strings: defaultStrings(), errors: [] };
-  for (const e of w.errors) err("schema/valid", `表記スタイル: ${e}`, { line: lineOf("/wording") });
+  for (const e of w.errors) err("schema/valid", m("parse.wording", { error: e }), { line: lineOf("/wording") });
   const s = (doc.strings = { ...w.strings, ...(data.strings ?? {}) });
   if (buildErrors.length) return doc;
 
   // --- 定義と採番 ---
   const define = (id: string, def: Omit<Def, "line">) => {
     const line = lineOf(def.ptr);
-    if (defs[id]) err("ref/resolve", `ID "${id}" が重複しています（${defs[id].type} と ${def.type}）`, { blockId: id, line });
+    if (defs[id]) err("ref/resolve", m("parse.dup-id", { id, a: defs[id].type, b: def.type }), { blockId: id, line });
     else defs[id] = { ...def, line };
   };
   (data.articles ?? []).forEach((a: any, i: number) =>
@@ -103,8 +104,8 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
   (data.sources ?? []).forEach((src: any, i: number) => define(src.id, { type: "source", ptr: `/sources/${i}` }));
   (data.facts ?? []).forEach((f: any, i: number) => {
     const line = lineOf(`/facts/${i}`);
-    if (project[f.id]) err("ref/resolve", `fact ID "${f.id}" は facts.yaml と重複しています`, { blockId: f.id, line });
-    else if (facts[f.id]) err("ref/resolve", `fact ID "${f.id}" が重複しています`, { blockId: f.id, line });
+    if (project[f.id]) err("ref/resolve", m("parse.dup-fact-project", { id: f.id }), { blockId: f.id, line });
+    else if (facts[f.id]) err("ref/resolve", m("parse.dup-fact", { id: f.id }), { blockId: f.id, line });
     else facts[f.id] = { ...f, origin: name, line };
   });
   const factOf = (id?: string) => (id ? facts[id] ?? project[id] : undefined);
@@ -157,35 +158,35 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
       switch (n) {
         case "ref": {
           const d = arg ? defs[arg] : undefined;
-          if (!d) return issue("ref/resolve", `未定義の参照 "${arg}"`);
-          if (!d.label) return issue("ref/resolve", `"${arg}"（${d.type}）は本文に配置されていないため参照できません`);
+          if (!d) return issue("ref/resolve", m("parse.undefined-ref", { id: arg }));
+          if (!d.label) return issue("ref/resolve", m("parse.unplaced-ref", { id: arg, type: d.type }));
           return d.label;
         }
         case "cite": {
           const d = arg ? defs[arg] : undefined;
-          if (d?.type !== "source") return issue("ref/resolve", `未定義の出典 "${arg}"`);
+          if (d?.type !== "source") return issue("ref/resolve", m("parse.undefined-cite", { id: arg }));
           return d.label!;
         }
         case "img":
         case "fig": {
           const want = n === "img" ? "image" : "figure";
-          if (defs[arg ?? ""]?.type !== want) return issue("ref/resolve", `未定義の${n === "img" ? "画像" : "図"} "${arg}"`);
+          if (defs[arg ?? ""]?.type !== want) return issue("ref/resolve", m(n === "img" ? "parse.undefined-img" : "parse.undefined-fig", { id: arg }));
           return `⟦${n}:${arg}⟧`;
         }
         case "fact": {
           const f = factOf(arg);
-          return f ? factText(f) : issue("ref/resolve", `未定義の fact "${arg}"`);
+          return f ? factText(f) : issue("ref/resolve", m("parse.undefined-fact", { id: arg }));
         }
         case "capture": {
           const f = factOf(arg);
-          if (!f?.capture) return issue("ref/resolve", `capture を持つ fact "${arg}" がありません`);
+          if (!f?.capture) return issue("ref/resolve", m("parse.undefined-capture", { id: arg }));
           return `⟦cap:${arg}⟧`;
         }
         case "calc":
           try {
             return formatNumber(evalCalc(arg ?? "", data, block));
           } catch (e) {
-            return issue("calc/eval", `計算式 "${arg}": ${(e as Error).message}`);
+            return issue("calc/eval", m("parse.calc", { expr: arg, error: (e as Error).message }));
           }
         case "n": {
           const label = block && typeof block.id === "string" ? defs[block.id]?.label : undefined;
@@ -193,7 +194,7 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
         }
         default: {
           if (arg === undefined && block && ["string", "number"].includes(typeof block[n])) return String(block[n]);
-          return issue("ref/resolve", `未定義のフィールド "${n}"`);
+          return issue("ref/resolve", m("parse.undefined-field", { name: n }));
         }
       }
     });
@@ -206,11 +207,11 @@ export function buildDoc(path: string, src: string, opts: BuildOptions = {}): Do
     for (const i of issues) err(i.id, i.msg, { blockId: t.blockId, line: t.line });
   }
   for (const q of quotes)
-    if (defs[q.source]?.type !== "source") err("ref/resolve", `引用の出典 "${q.source}" が未定義です`, { blockId: q.blockId, line: lineOf(q.ptr) });
+    if (defs[q.source]?.type !== "source") err("ref/resolve", m("parse.undefined-quote-source", { id: q.source }), { blockId: q.blockId, line: lineOf(q.ptr) });
   const reserved = data.kind === "proposal" ? ["costs", "schedule"] : [];
   for (const b of tableBlocks)
     if (defs[b.id]?.type !== "table" && !reserved.includes(b.id))
-      err("ref/resolve", `未定義の表 "${b.id}"`, { blockId: b.blockId, line: lineOf(b.ptr) });
+      err("ref/resolve", m("parse.undefined-table", { id: b.id }), { blockId: b.blockId, line: lineOf(b.ptr) });
 
   return doc;
 }

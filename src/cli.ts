@@ -1,3 +1,4 @@
+import { m } from "./messages";
 import { parseArgs } from "node:util";
 import { buildAll } from "./build";
 import { exitCode, formatText } from "./runner/format";
@@ -40,8 +41,8 @@ switch (cmd) {
   case "serve": {
     const s = await startServer(root, { port: v.port ? Number(v.port) : undefined, register: v["register-superset"], watch: true });
     console.log(`doc-test-runner: ${s.base}/`);
-    console.log(`URL 一覧: ${s.urlsFile}`);
-    if (v["register-superset"]) console.log("~/.superset/hosted-urls.json に登録しました");
+    console.log(m("cli.urls", { path: s.urlsFile }));
+    if (v["register-superset"]) console.log(m("cli.registered"));
     break;
   }
   default:

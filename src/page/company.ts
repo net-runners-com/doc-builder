@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import Ajv from "ajv";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
@@ -24,7 +25,7 @@ export const companyFile = (root: string) => join(root, "company.yaml");
 
 export function loadCompany(root: string): { company?: Company; error?: string } {
   const p = companyFile(root);
-  if (!existsSync(p)) return { error: "company.yaml がありません" };
+  if (!existsSync(p)) return { error: m("company.missing") };
   let data: any;
   try {
     data = parse(readFileSync(p, "utf8"));

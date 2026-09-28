@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -54,13 +55,13 @@ export function resolveWording(root: string, name = "default"): { strings: Strin
   let cur: string | undefined = name;
   while (cur && cur !== "default") {
     if (seen.includes(cur)) {
-      errors.push(`extends が循環しています: ${[...seen, cur].join(" → ")}`);
+      errors.push(m("extends.cycle", { chain: [...seen, cur].join(" → ") }));
       break;
     }
     seen.push(cur);
     const p = join(wordingsDir(root), `${cur}.json`);
     if (!existsSync(p)) {
-      errors.push(`表記スタイル "${cur}" が見つかりません（${p}）`);
+      errors.push(m("wording.not-found", { id: cur, path: p }));
       break;
     }
     let data: any;
@@ -90,18 +91,18 @@ export function validateStrings(over: Record<string, unknown>): { key: string; m
   for (const [k, v] of Object.entries(over)) {
     if (k === "extends") continue;
     if (!(k in known)) {
-      out.push({ key: k, message: `未知の文字列キー "${k}"` });
+      out.push({ key: k, message: m("wording.unknown-key", { key: k }) });
       continue;
     }
     if (typeof v !== "string") {
-      out.push({ key: k, message: `"${k}" は文字列で書いてください` });
+      out.push({ key: k, message: m("wording.not-string", { key: k }) });
       continue;
     }
-    if (k === "heading.style" && !["1.1", "none"].includes(v)) out.push({ key: k, message: `heading.style は "1.1" か "none" です` });
+    if (k === "heading.style" && !["1.1", "none"].includes(v)) out.push({ key: k, message: m("wording.heading-style") });
     const used = [...v.matchAll(/\{([a-z]+)\}/g)].map((m) => m[1]);
     const allowed = VARS[k] ?? [];
-    for (const u of used) if (!allowed.includes(u)) out.push({ key: k, message: `"${k}" では {${u}} は使えません（使える変数: ${allowed.map((a) => `{${a}}`).join(" ") || "なし"}）` });
-    for (const r of REQUIRED_VARS[k] ?? []) if (!used.includes(r)) out.push({ key: k, message: `"${k}" には {${r}} が必要です` });
+    for (const u of used) if (!allowed.includes(u)) out.push({ key: k, message: m("wording.bad-var", { key: k, var: u, allowed: allowed.map((a) => `{${a}}`).join(" ") || m("wording.none") }) });
+    for (const r of REQUIRED_VARS[k] ?? []) if (!used.includes(r)) out.push({ key: k, message: m("wording.missing-var", { key: k, var: r }) });
   }
   return out;
 }

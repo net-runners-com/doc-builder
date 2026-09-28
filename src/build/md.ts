@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { copyFileSync, mkdirSync } from "node:fs";
 import { extname, join } from "node:path";
 import type { Company } from "../page/company";
@@ -9,8 +10,6 @@ import type { Content, Node } from "./content";
 
 const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
 
-/** Markdown に反映しないもの */
-export const MD_IGNORED = ["テーマ（色・フォント・用紙・透かし）", "レイアウトの header / footer", "md.ts の無い部品"];
 
 export function emitMarkdown(
   l: Content,

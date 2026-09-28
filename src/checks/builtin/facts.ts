@@ -1,3 +1,4 @@
+import { m } from "../../messages";
 import { Skip, Unknown } from "../../errors";
 import { loadFacts, readSnapshot } from "../../facts/load";
 import { probe, type ProbeResult } from "../../facts/probe";
@@ -10,7 +11,8 @@ export const FACTS_DOC = "@facts";
 
 export const factsValid = defineProjectCheck({
   id: "facts/valid",
-  group: "schema",
+  axis: "structure",
+  scope: "corpus",
   severity: "error",
   run: (ctx) => loadFacts(ctx.root).errors.map((e) => ctx.fail(e.message, { line: e.line })),
 });
@@ -20,10 +22,11 @@ const when = (r: ProbeResult) => `${r.host} ${r.at.slice(0, 16).replace("T", " "
 export function probeCheck(f: Fact): ProjectCheck {
   return defineProjectCheck({
     id: `probe/${f.id}`,
-    group: "probe",
+    axis: "fact",
+    scope: "corpus",
+    trigger: "probe",
     severity: "error",
     async run(ctx: BaseCtx) {
-      if (!ctx.options.probe) throw new Skip("未実行（--probe で実行）");
       const r = await probe(f, { root: ctx.root, timeoutMs: ctx.config.probe.timeoutMs, updateSnapshots: ctx.options.updateSnapshots, snapshot: readSnapshot(ctx.root, f.id) });
       ctx.probes.set(f.id, r);
       const note = `${when(r)}${r.ms ? ` ${r.ms}ms` : ""}`;
@@ -44,17 +47,18 @@ export function probeTargets(root: string, docs: Doc[]): Fact[] {
 
 export const factRefs = defineCheck({
   id: "fact/refs",
-  group: "rules",
+  axis: "fact",
+  scope: "item",
+  trigger: "probe",
   kinds: ["*"],
   severity: "error",
   run(doc, ctx) {
-    if (!ctx.options.probe) throw new Skip("未実行（--probe で実行）");
     const out = [];
     for (const id of doc.factRefs) {
       const r = ctx.probes.get(id);
       if (r?.status !== "fail") continue;
       const t = doc.texts.find((t) => t.raw.includes(`fact:${id}`) || t.raw.includes(`capture:${id}`));
-      out.push(ctx.fail(`fact "${id}" が実機と一致しません（${r.host} ${r.at.slice(0, 10)}）: ${r.messages[0].split("\n")[0]}`, { blockId: t?.blockId, line: t?.line }));
+      out.push(ctx.fail(m("check.fact.mismatch", { id, host: r.host, date: r.at.slice(0, 10), detail: r.messages[0].split("\n")[0] }), { blockId: t?.blockId, line: t?.line }));
     }
     return out;
   },
@@ -63,13 +67,14 @@ export const factRefs = defineCheck({
 export function unusedFacts(docs: Doc[]): ProjectCheck {
   return defineProjectCheck({
     id: "unused/facts",
-    group: "rules",
+    axis: "structure",
+    scope: "corpus",
     severity: "warn",
     run(ctx) {
       const used = new Set(docs.flatMap((d) => d.factRefs));
       return Object.values(loadFacts(ctx.root).facts)
         .filter((f) => !used.has(f.id))
-        .map((f) => ctx.fail(`fact "${f.id}" はどの文書からも参照されていません`, { blockId: f.id, line: f.line }));
+        .map((f) => ctx.fail(m("check.unused.fact-corpus", { id: f.id }), { blockId: f.id, line: f.line }));
     },
   });
 }

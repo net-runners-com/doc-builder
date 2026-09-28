@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { dirname } from "node:path";
@@ -27,7 +28,7 @@ const toMs = (t: number | string | undefined, dflt: number) =>
 export async function execute(shell: Shell | undefined, run: string, timeoutMs: number) {
   const sh = shell ?? defaultShell();
   const args = argv(sh, run);
-  if (!args) return { error: `シェル "${sh}" が見つかりません` };
+  if (!args) return { error: m("probe.no-shell", { shell: sh }) };
   const start = performance.now();
   const p = Bun.spawn(args, { stdout: "pipe", stderr: "pipe" });
   let timedOut = false;
@@ -38,7 +39,7 @@ export async function execute(shell: Shell | undefined, run: string, timeoutMs: 
   const [stdout, stderr, exit] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text(), p.exited]);
   clearTimeout(timer);
   const ms = Math.round(performance.now() - start);
-  if (timedOut) return { error: `タイムアウト（${timeoutMs}ms）` };
+  if (timedOut) return { error: m("probe.timeout", { ms: timeoutMs }) };
   return { stdout: stdout.replace(/\r\n/g, "\n"), stderr, exit, ms };
 }
 
@@ -46,19 +47,19 @@ export function judge(e: Expect, r: { stdout: string; exit: number; ms: number }
   const out = r.stdout.trim();
   const bad: string[] = [];
   const show = (s: string) => JSON.stringify(s.length > 80 ? s.slice(0, 80) + "…" : s);
-  if (e.exit !== undefined && r.exit !== e.exit) bad.push(`終了コード ${r.exit}（期待 ${e.exit}）`);
-  if (e.equals !== undefined && out !== e.equals) bad.push(`出力 ${show(out)}（期待 ${show(e.equals)}）`);
-  if (e.stdout_contains !== undefined && !r.stdout.includes(e.stdout_contains)) bad.push(`出力に ${show(e.stdout_contains)} が含まれない`);
-  if (e.stdout_match !== undefined && !new RegExp(e.stdout_match, "m").test(r.stdout)) bad.push(`出力が /${e.stdout_match}/ に一致しない`);
+  if (e.exit !== undefined && r.exit !== e.exit) bad.push(m("probe.exit", { got: r.exit, want: e.exit }));
+  if (e.equals !== undefined && out !== e.equals) bad.push(m("probe.equals", { got: show(out), want: show(e.equals) }));
+  if (e.stdout_contains !== undefined && !r.stdout.includes(e.stdout_contains)) bad.push(m("probe.contains", { want: show(e.stdout_contains) }));
+  if (e.stdout_match !== undefined && !new RegExp(e.stdout_match, "m").test(r.stdout)) bad.push(m("probe.match", { re: e.stdout_match }));
   if (e.lines_equal_value) {
     const want = new Set((Array.isArray(value) ? value : value === undefined ? [] : [String(value)]).map(String));
     const got = new Set(out.split("\n").map((s) => s.trim()).filter(Boolean));
     const missing = [...want].filter((x) => !got.has(x));
     const extra = [...got].filter((x) => !want.has(x));
     if (missing.length || extra.length)
-      bad.push([missing.length ? `実機に無い: ${missing.join(", ")}` : "", extra.length ? `資料に無い: ${extra.join(", ")}` : ""].filter(Boolean).join(" / "));
+      bad.push([missing.length ? m("probe.lines-missing", { items: missing.join(", ") }) : "", extra.length ? m("probe.lines-extra", { items: extra.join(", ") }) : ""].filter(Boolean).join(" / "));
   }
-  if (e.max_ms !== undefined && r.ms > e.max_ms) bad.push(`実行時間 ${r.ms}ms（上限 ${e.max_ms}ms）`);
+  if (e.max_ms !== undefined && r.ms > e.max_ms) bad.push(m("probe.max-ms", { ms: r.ms, max: e.max_ms }));
   return bad;
 }
 
@@ -94,23 +95,23 @@ export async function probe(f: Fact, opts: { root: string; timeoutMs: number; up
     const r = await execute(f.capture.shell, f.capture.run, opts.timeoutMs);
     if ("error" in r) {
       bump("unknown");
-      messages.push(`capture: ${r.error}`);
+      messages.push(m("probe.capture-error", { error: r.error }));
     } else {
       const got = normalizeOutput(r.stdout, f.capture.normalize);
       if (opts.updateSnapshots) {
         const p = snapshotFile(opts.root, f.id);
         mkdirSync(dirname(p), { recursive: true });
         writeFileSync(p, got);
-        messages.push("スナップショットを更新しました");
+        messages.push(m("probe.snapshot-updated"));
       } else if (opts.snapshot === undefined) {
         bump("unknown");
-        messages.push("スナップショット未取得（--update-snapshots で取得）");
+        messages.push(m("probe.snapshot-missing"));
       } else if (opts.snapshot !== got) {
         bump("fail");
-        messages.push(`出力が資料のスナップショットと違います:\n--- 資料\n${opts.snapshot}--- 実機\n${got}`);
+        messages.push(m("probe.snapshot-diff", { want: opts.snapshot, got }));
       }
     }
   }
-  if (!f.verify && !f.capture) messages.push("verify なし");
+  if (!f.verify && !f.capture) messages.push(m("probe.no-verify"));
   return { status, messages, stdout, ms, ...base };
 }

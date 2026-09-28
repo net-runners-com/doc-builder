@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { m } from "../messages";
 
 export interface UrlEntry {
   title: string;
@@ -11,8 +12,8 @@ export function urlEntries(base: string, docs: string[]): UrlEntry[] {
   return [
     { title: "doc-test-runner", url: `${base}/` },
     ...docs.flatMap((d) => [
-      { title: `${d} テスト`, url: `${base}/t/${encodeURIComponent(d)}` },
-      { title: `${d} プレビュー`, url: `${base}/p/${encodeURIComponent(d)}` },
+      { title: m("ui.url-test", { doc: d }), url: `${base}/t/${encodeURIComponent(d)}` },
+      { title: m("ui.url-preview", { doc: d }), url: `${base}/p/${encodeURIComponent(d)}` },
     ]),
   ];
 }

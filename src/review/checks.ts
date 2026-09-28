@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -35,7 +36,7 @@ export function buildPrompt(root: string, doc: Doc, a: Aspect, images: string[])
 }
 
 async function figurePngs(doc: Doc, ctx: CheckCtx): Promise<string[]> {
-  const { svgs } = await renderFigures(doc, ctx.workDir, renderOptions(ctx.theme, ctx.config));
+  const { svgs } = await renderFigures(doc, ctx.workDir, renderOptions(ctx.theme, ctx.config, doc.strings));
   const dir = join(ctx.workDir, "review-img");
   mkdirSync(dir, { recursive: true });
   return Object.entries(svgs).map(([id, svg]) => {
@@ -50,12 +51,13 @@ export function reviewChecks(root: string, doc: Doc): Check[] {
   return loadAspects(root, doc.kind).map((a) =>
     defineCheck({
       id: `review/${a.id}`,
-      group: "review",
+      axis: "review",
+      scope: "document",
+      trigger: "review",
       kinds: ["*"],
-      severity: "error",
+      severity: "warn",
       async run(doc, ctx) {
         const model = ctx.config.review.model;
-        if (!ctx.options.review) throw new Skip("未実行（--review で実行）");
         let out: ReviewOutput | undefined;
         {
           const images = await figurePngs(doc, ctx).catch(() => []);
@@ -71,10 +73,10 @@ export function reviewChecks(root: string, doc: Doc): Check[] {
               last = e as Error;
             }
           }
-          if (!out) throw new Unknown(`レビュー失敗: ${last?.message}`);
+          if (!out) throw new Unknown(m("check.review.failed", { error: last?.message }));
         }
         if (!out || out.verdict === "pass") return [];
-        const fs = out.findings.length ? out.findings : [{ reason: "不合格（理由なし）" }];
+        const fs = out.findings.length ? out.findings : [{ reason: m("check.review.no-reason") }];
         return fs.map((f: { blockId?: string; reason: string }) =>
           ctx.fail(f.reason, { blockId: f.blockId, line: f.blockId ? doc.defs[f.blockId]?.line : undefined }),
         );

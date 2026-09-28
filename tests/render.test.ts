@@ -6,6 +6,7 @@ import { figureRender } from "../src/checks/builtin/figure";
 import { loadConfig } from "../src/config";
 import { renderFigures, renderOptions } from "../src/render";
 import { resolveTheme } from "../src/theme/resolve";
+import { defaultStrings } from "../src/wording";
 import { MIN, REPO, docOf, messages } from "./helpers";
 
 const workDir = mkdtempSync(join(tmpdir(), "dtr-render-"));
@@ -20,7 +21,7 @@ const doc = (figs: string) =>
 const ok = '  - { id: flow, type: diagram, caption: c, source: "a -> b" }\n  - { id: chart, type: chart, caption: c, chart: bar, data: "{{ref:effects}}", x: 項目, y: [現状, 導入後] }\n';
 
 test("D2 と Vega-Lite を SVG に描画する", async () => {
-  const { svgs, errors } = await renderFigures(doc(ok), workDir, renderOptions(resolveTheme(REPO, "default"), loadConfig(REPO)));
+  const { svgs, errors } = await renderFigures(doc(ok), workDir, renderOptions(resolveTheme(REPO, "default"), loadConfig(REPO), defaultStrings()));
   expect(errors).toEqual([]);
   expect(readFileSync(svgs.flow, "utf8")).toContain("<svg");
   expect(readFileSync(svgs.chart, "utf8")).toContain("<svg");

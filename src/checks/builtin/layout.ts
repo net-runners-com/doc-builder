@@ -1,3 +1,4 @@
+import { m } from "../../messages";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { loadCompany } from "../../page/company";
@@ -9,20 +10,22 @@ import { defineCheck, defineProjectCheck } from "../define";
 
 export const layoutValid = defineProjectCheck({
   id: "layout/valid",
-  group: "rules",
+  axis: "structure",
+  scope: "corpus",
   severity: "error",
   run(ctx) {
     const { defs, errors } = loadComponents(ctx.root);
     const out = errors.map((e) => ctx.fail(e, { blockId: "components" }));
     for (const id of listLayouts(ctx.root))
-      for (const e of checkLayoutFile(ctx.root, id, defs)) out.push(ctx.fail(`layouts/${id}.yaml: ${e.message}`, { blockId: id, line: e.line }));
+      for (const e of checkLayoutFile(ctx.root, id, defs)) out.push(ctx.fail(m("check.layout.file", { file: `layouts/${id}.yaml`, error: e.message }), { blockId: id, line: e.line }));
     return out;
   },
 });
 
 export const wordingValid = defineProjectCheck({
   id: "wording/valid",
-  group: "rules",
+  axis: "structure",
+  scope: "corpus",
   severity: "error",
   run(ctx) {
     const out = [];
@@ -31,10 +34,10 @@ export const wordingValid = defineProjectCheck({
       try {
         data = JSON.parse(readFileSync(join(wordingsDir(ctx.root), `${id}.json`), "utf8"));
       } catch (e) {
-        out.push(ctx.fail(`wordings/${id}.json: ${(e as Error).message}`, { blockId: id }));
+        out.push(ctx.fail(m("check.wording.file", { file: `wordings/${id}.json`, error: (e as Error).message }), { blockId: id }));
         continue;
       }
-      for (const e of validateStrings(data)) out.push(ctx.fail(`wordings/${id}.json: ${e.message}`, { blockId: id }));
+      for (const e of validateStrings(data)) out.push(ctx.fail(m("check.wording.file", { file: `wordings/${id}.json`, error: e.message }), { blockId: id }));
     }
     return out;
   },
@@ -43,11 +46,12 @@ export const wordingValid = defineProjectCheck({
 /** 文書が使うレイアウトの部品に必要なデータがあるか */
 export const layoutData = defineCheck({
   id: "layout/data",
-  group: "rules",
+  axis: "structure",
+  scope: "document",
   kinds: ["*"],
   severity: "error",
   run(doc, ctx) {
-    const out = ctx.layout.errors.map((e) => ctx.fail(`レイアウト "${ctx.layout.id}": ${e}`, { line: doc.lineOf("/layout") }));
+    const out = ctx.layout.errors.map((e) => ctx.fail(m("check.layout.error", { id: ctx.layout.id, error: e }), { line: doc.lineOf("/layout") }));
     const { defs } = loadComponents(ctx.root);
     const meta = doc.data.meta;
     const company = loadCompany(ctx.root);
@@ -59,8 +63,8 @@ export const layoutData = defineCheck({
       for (const need of def.needs) {
         const keys = need === "meta.$fields" ? (props?.fields ?? []).map((f: string) => `meta.${f}`) : [need];
         for (const k of keys) {
-          const missing = k === "company" ? company.error : k.startsWith("meta.") && !hasValue(meta[k.slice(5)]) ? `${k} がありません` : undefined;
-          const msg = missing && `${region}/${def.name}: ${missing}`;
+          const missing = k === "company" ? company.error : k.startsWith("meta.") && !hasValue(meta[k.slice(5)]) ? m("check.layout.missing-data", { key: k }) : undefined;
+          const msg = missing && m("check.layout.needs", { region, component: def.name, error: missing });
           if (msg && !seen.has(msg)) {
             seen.add(msg);
             out.push(ctx.fail(msg, { line: doc.lineOf(k.startsWith("meta.") ? "/meta" : "") }));
@@ -68,7 +72,7 @@ export const layoutData = defineCheck({
         }
       }
       if (def.name === "company" && company.company?.logo && props?.logo && !existsSync(company.company.logo))
-        out.push(ctx.fail(`company.yaml のロゴが存在しません: ${company.company.logo}`));
+        out.push(ctx.fail(m("check.layout.logo-missing", { path: company.company.logo })));
     }
     return out;
   },
@@ -79,7 +83,8 @@ const hasValue = (v: unknown) => v !== undefined && v !== null && v !== "" && !(
 /** 承認欄: 版 1.0 以上は全役割に氏名・日付、stamp の画像が存在すること */
 export const approvalComplete = defineCheck({
   id: "approval/complete",
-  group: "rules",
+  axis: "structure",
+  scope: "item",
   kinds: ["*"],
   severity: "error",
   run(doc, ctx) {
@@ -96,11 +101,11 @@ export const approvalComplete = defineCheck({
       for (const r of roles) {
         const i = approvals.findIndex((a) => a.role === r);
         const a = approvals[i];
-        if (released && (!a?.name || !a?.date)) out.push(ctx.fail(`版 ${meta.version}: 承認欄「${r}」の${!a ? "記載" : !a.name ? "氏名" : "日付"}がありません`, { line: line(i < 0 ? undefined : i) }));
+        if (released && (!a?.name || !a?.date)) out.push(ctx.fail(m(`check.approval.${!a ? "missing-role" : !a.name ? "missing-name" : "missing-date"}`, { version: meta.version, role: r }), { line: line(i < 0 ? undefined : i) }));
       }
     }
     approvals.forEach((a, i) => {
-      if (a.stamp && !existsSync(resolve(doc.dir, a.stamp))) out.push(ctx.fail(`印影の画像が存在しません: ${a.stamp}`, { line: line(i) }));
+      if (a.stamp && !existsSync(resolve(doc.dir, a.stamp))) out.push(ctx.fail(m("check.approval.stamp-missing", { path: a.stamp }), { line: line(i) }));
     });
     return out;
   },

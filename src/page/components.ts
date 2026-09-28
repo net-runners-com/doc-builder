@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
@@ -40,12 +41,12 @@ export function loadComponents(root: string): { defs: Registry; errors: string[]
   const dir = componentsDir(root);
   const defs: Registry = {};
   const errors: string[] = [];
-  if (!existsSync(dir)) return { defs, errors: ["components/ がありません"] };
+  if (!existsSync(dir)) return { defs, errors: [m("component.dir-missing")] };
   for (const f of [...new Bun.Glob("*/component.yaml").scanSync({ cwd: dir })].sort()) {
     const name = f.split("/")[0];
     const base = join(dir, name);
     if (!/^[a-z][a-z0-9-]*$/.test(name)) {
-      errors.push(`components/${name}: 部品名は英小文字・数字・ハイフンにしてください`);
+      errors.push(m("component.bad-name", { name }));
       continue;
     }
     let spec: any;
@@ -56,10 +57,10 @@ export function loadComponents(root: string): { defs: Registry; errors: string[]
       continue;
     }
     const typ = join(base, "render.typ");
-    if (!existsSync(typ)) errors.push(`components/${name}/render.typ がありません`);
+    if (!existsSync(typ)) errors.push(m("component.no-typ", { name }));
     const bad = (spec.regions ?? []).filter((r: string) => !(REGIONS as readonly string[]).includes(r));
-    if (bad.length) errors.push(`components/${name}: 未知の区画 ${bad.join(", ")}`);
-    if (!spec.regions?.length) errors.push(`components/${name}: regions がありません`);
+    if (bad.length) errors.push(m("component.bad-region", { name, regions: bad.join(", ") }));
+    if (!spec.regions?.length) errors.push(m("component.no-regions", { name }));
     const mdPath = join(base, "md.ts");
     let md: MdFn | undefined;
     if (existsSync(mdPath)) {

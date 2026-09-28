@@ -37,7 +37,7 @@ test("不正出力は 1 回再試行する。結果は保存せず、--review �
   };
   const r = review(await runAll(root, { review: true, claude }));
   expect(calls).toBe(2);
-  expect(r.status).toBe("fail");
+  expect(r.status).toBe("warn"); // review は常に警告
   expect(r.findings[0]).toMatchObject({ message: "曖昧", loc: { blockId: "intro", line: 8 } });
   expect(review(await runAll(root)).status).toBe("skipped");
 });

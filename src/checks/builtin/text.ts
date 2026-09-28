@@ -1,3 +1,4 @@
+import { m } from "../../messages";
 import { TOKEN } from "../../parse/doc";
 import { at, defineCheck } from "../define";
 
@@ -5,7 +6,8 @@ const plain = (s: string) => s.replace(TOKEN, " ");
 
 export const glossaryAvoid = defineCheck({
   id: "glossary/avoid",
-  group: "rules",
+  axis: "surface",
+  scope: "word",
   kinds: ["*"],
   severity: "error",
   run(doc, ctx) {
@@ -20,7 +22,7 @@ export const glossaryAvoid = defineCheck({
       const pairs = entries.flatMap((e) => e.avoid.map((a) => ({ a, term: e.term }))).sort((x, y) => y.a.length - x.a.length);
       for (const { a, term } of pairs) {
         if (!s.includes(a)) continue;
-        out.push(ctx.fail(`「${a}」→「${term}」`, at(t)));
+        out.push(ctx.fail(m("check.glossary.avoid", { avoid: a, term }), at(t)));
         s = s.split(a).join("\u0000".repeat(a.length));
       }
     }
@@ -30,22 +32,23 @@ export const glossaryAvoid = defineCheck({
 
 export const placeholder = defineCheck({
   id: "text/placeholder",
-  group: "rules",
+  axis: "surface",
+  scope: "word",
   kinds: ["*"],
   severity: "error",
   run: (doc, ctx) =>
-    doc.texts.flatMap((t) => [...plain(t.raw).matchAll(new RegExp(ctx.config.placeholders.join("|"), "g"))].map((m) => ctx.fail(`未記入のプレースホルダ「${m[0]}」`, at(t)))),
+    doc.texts.flatMap((t) =>
+      [...plain(t.raw).matchAll(new RegExp(ctx.config.placeholders.join("|"), "g"))].map((x) => ctx.fail(m("check.placeholder", { text: x[0] }), at(t))),
+    ),
 });
 
 export const headingInBody = defineCheck({
   id: "text/heading-in-body",
-  group: "rules",
+  axis: "structure",
+  scope: "item",
   kinds: ["*"],
   severity: "error",
-  run: (doc, ctx) =>
-    doc.texts
-      .filter((t) => /^\s{0,3}#{1,6}\s/m.test(t.raw))
-      .map((t) => ctx.fail("本文に Markdown 見出しがあります（見出しは sections / children で構造化してください）", at(t))),
+  run: (doc, ctx) => doc.texts.filter((t) => /^\s{0,3}#{1,6}\s/m.test(t.raw)).map((t) => ctx.fail(m("check.heading-in-body"), at(t))),
 });
 
 export const textChecks = [glossaryAvoid, placeholder, headingInBody];

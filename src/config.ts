@@ -10,6 +10,8 @@ export interface Config {
   defaultWording: string;
   review: { model: string; timeoutMs: number; retries: number; imageWidth: number };
   sourceMaxAgeDays: number;
+  /** theme/contrast の下限（WCAG AA = 4.5） */
+  contrastMin: number;
   port: number;
   /** text/placeholder の正規表現 */
   placeholders: string[];

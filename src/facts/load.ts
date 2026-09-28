@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import Ajv from "ajv";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -19,7 +20,7 @@ export function loadFacts(root: string): LoadedFacts {
   const p = factsFile(root);
   if (!existsSync(p)) return { facts: {}, errors: [] };
   const l = loadYaml(readFileSync(p, "utf8"));
-  if (l.error) return { facts: {}, errors: [{ message: `YAML 構文エラー: ${l.error.message}`, line: l.error.line }] };
+  if (l.error) return { facts: {}, errors: [{ message: m("parse.yaml", { error: l.error.message }), line: l.error.line }] };
   const list = l.data?.facts;
   if (!validate(list ?? null))
     return {
@@ -32,7 +33,7 @@ export function loadFacts(root: string): LoadedFacts {
   const errors: LoadedFacts["errors"] = [];
   (list as Fact[]).forEach((f, i) => {
     const line = l.lineOf(`/facts/${i}`);
-    if (facts[f.id]) errors.push({ message: `fact ID "${f.id}" が重複しています`, line });
+    if (facts[f.id]) errors.push({ message: m("parse.dup-fact", { id: f.id }), line });
     else facts[f.id] = { ...f, origin: "facts.yaml", line };
   });
   return { facts, errors };

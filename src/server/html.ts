@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
-import { ICON, counts, worst } from "../runner/format";
-import { GROUPS, type CheckResult, type Report, type Status } from "../types";
+import { ICON, counts, where, worst } from "../runner/format";
+import { m } from "../messages";
+import { AXES, type CheckResult, type Report, type Status } from "../types";
 
 export interface Focus {
   doc?: string;
-  group?: string;
+  axis?: string;
   checkId?: string;
   n?: number;
 }
@@ -14,9 +15,9 @@ const enc = encodeURIComponent;
 const icon = (s: Status) => `<span class="i ${s}">${ICON[s]}</span>`;
 
 export function parseFocus(path: string): Focus {
-  const [, t, doc, group, a, b, n] = path.split("/").map(decodeURIComponent);
+  const [, t, doc, axis, a, b, n] = path.split("/").map(decodeURIComponent);
   if (t !== "t") return {};
-  return { doc, group, checkId: a && b ? `${a}/${b}` : undefined, n: n !== undefined ? Number(n) : undefined };
+  return { doc, axis, checkId: a && b ? `${a}/${b}` : undefined, n: n !== undefined ? Number(n) : undefined };
 }
 
 const CSS = `
@@ -62,16 +63,16 @@ export function treePage(root: string, report: Report, f: Focus, files: Record<s
   let tree = `<ul><li><details open><summary${sel(!f.doc)}>${icon(all)} <a href="/">docs</a> <span class="n">✗${c.fail} !${c.warn} ?${c.unknown} –${c.skipped} ✓${c.pass}</span></summary><ul>`;
   for (const [doc, rs] of byDoc) {
     const openDoc = !f.doc || f.doc === doc || rs.some((r) => r.status === "fail");
-    tree += `<li><details${openDoc ? " open" : ""}><summary${sel(f.doc === doc && !f.group)}>${icon(worst(rs.map((r) => r.status)))} <a href="/t/${enc(doc)}">${h(doc)}</a></summary><ul>`;
-    for (const g of GROUPS) {
-      const gs = rs.filter((r) => r.group === g);
+    tree += `<li><details${openDoc ? " open" : ""}><summary${sel(f.doc === doc && !f.axis)}>${icon(worst(rs.map((r) => r.status)))} <a href="/t/${enc(doc)}">${h(doc)}</a></summary><ul>`;
+    for (const g of AXES) {
+      const gs = rs.filter((r) => r.axis === g);
       if (!gs.length) continue;
       const gStatus = worst(gs.map((r) => r.status));
-      const openG = (f.doc === doc && f.group === g) || gStatus === "fail";
-      tree += `<li><details${openG ? " open" : ""}><summary${sel(f.doc === doc && f.group === g && !f.checkId)}>${icon(gStatus)} <a href="/t/${enc(doc)}/${g}">${g}</a></summary><ul>`;
+      const openG = (f.doc === doc && f.axis === g) || gStatus === "fail";
+      tree += `<li><details${openG ? " open" : ""}><summary${sel(f.doc === doc && f.axis === g && !f.checkId)}>${icon(gStatus)} <a href="/t/${enc(doc)}/${g}">${h(m(`axis.${g}`))}</a></summary><ul>`;
       for (const r of gs) {
         const url = `/t/${enc(doc)}/${g}/${r.checkId}`;
-        tree += `<li${sel(f.doc === doc && f.checkId === r.checkId && f.n === undefined)}>${icon(r.status)} <a href="${url}">${h(r.checkId)}</a>${r.findings.length ? ` <span class="n">${r.findings.length}件</span>` : ""}`;
+        tree += `<li${sel(f.doc === doc && f.checkId === r.checkId && f.n === undefined)}>${icon(r.status)} <a href="${url}">${h(r.checkId)}</a> <span class="n">${h(m(`scope.${r.scope}`))}${r.findings.length ? ` · ${h(m("ui.count", { n: r.findings.length }))}` : ""}</span>`;
         if (r.findings.length)
           tree += `<ul>${r.findings.map((x, i) => `<li${sel(f.checkId === r.checkId && f.doc === doc && f.n === i)}><a href="${url}/${i}">${h(x.message.slice(0, 60))}</a></li>`).join("")}</ul>`;
         tree += "</li>";
@@ -84,39 +85,39 @@ export function treePage(root: string, report: Report, f: Focus, files: Record<s
 
   // 詳細ペイン
   let detail = "";
-  const scoped = report.results.filter((r) => (!f.doc || r.doc === f.doc) && (!f.group || r.group === f.group) && (!f.checkId || r.checkId === f.checkId));
+  const scoped = report.results.filter((r) => (!f.doc || r.doc === f.doc) && (!f.axis || r.axis === f.axis) && (!f.checkId || r.checkId === f.checkId));
   if (f.checkId && f.n !== undefined) {
     const r = scoped[0];
     const x = r?.findings[f.n];
     detail = x
-      ? `<h3>${icon(r.status)} ${h(r.checkId)} #${f.n}</h3><div class="msg">${h(x.message)}</div><div class="n">${h(x.loc.blockId ?? "")}</div>${excerpt(root, files[r.doc], x.loc.line)}`
-      : "<p>見つかりません</p>";
+      ? `<h3>${icon(r.status)} ${h(r.checkId)} #${f.n}</h3><div class="msg">${h(x.message)}</div><div class="n">${h(where(x))}</div>${excerpt(root, files[r.doc], x.loc.line)}`
+      : `<p>${h(m("ui.not-found"))}</p>`;
   } else {
     const bad = scoped.filter((r) => r.status !== "pass");
-    detail = `<h3>${h([f.doc, f.group, f.checkId].filter(Boolean).join(" / ") || "全体")}</h3>`;
-    if (f.doc && files[f.doc]) detail += `<p><a href="/p/${enc(f.doc)}">プレビュー →</a></p>`;
+    detail = `<h3>${h([f.doc, f.axis, f.checkId].filter(Boolean).join(" / ") || m("ui.all"))}</h3>`;
+    if (f.doc && files[f.doc]) detail += `<p><a href="/p/${enc(f.doc)}">${h(m("ui.preview-link"))}</a></p>`;
     detail += bad.length
       ? bad
           .map(
             (r) =>
-              `<h4>${icon(r.status)} <a href="/t/${enc(r.doc)}/${r.group}/${r.checkId}">${h(r.doc)} / ${h(r.checkId)}</a></h4>${r.note ? `<div class="n">${h(r.note)}</div>` : ""}` +
-              r.findings.map((x, i) => `<div class="msg"><a href="/t/${enc(r.doc)}/${r.group}/${r.checkId}/${i}">${h(x.message)}</a> <span class="n">${h(x.loc.blockId ?? "")}${x.loc.line ? ` L${x.loc.line}` : ""}</span></div>`).join(""),
+              `<h4>${icon(r.status)} <a href="/t/${enc(r.doc)}/${r.axis}/${r.checkId}">${h(r.doc)} / ${h(r.checkId)}</a></h4>${r.note ? `<div class="n">${h(r.note)}</div>` : ""}` +
+              r.findings.map((x, i) => `<div class="msg"><a href="/t/${enc(r.doc)}/${r.axis}/${r.checkId}/${i}">${h(x.message)}</a> <span class="n">${h(where(x))}</span></div>`).join(""),
           )
           .join("")
-      : "<p>すべて合格</p>";
+      : `<p>${h(m("ui.all-pass"))}</p>`;
   }
 
-  const here = f.doc ? `/t/${[f.doc, f.group, f.checkId].filter(Boolean).map((s) => s!.split("/").map(enc).join("/")).join("/")}` : "/";
+  const here = f.doc ? `/t/${[f.doc, f.axis, f.checkId].filter(Boolean).map((s) => s!.split("/").map(enc).join("/")).join("/")}` : "/";
   const btn = (label: string, q: string) => `<form method="post" action="/api/run?${q}&back=${enc(here)}"><button>${label}</button></form>`;
-  const header = `<header><b>${icon(all)} doc-test-runner</b><span id="running" class="n" hidden>実行中…</span>${btn("再実行", "")}${btn("+probe", "probe=1")}${btn("+online", "online=1")}${btn("+review", "review=1")}</header>`;
+  const header = `<header><b>${icon(all)} doc-test-runner</b><span id="running" class="n" hidden>${h(m("ui.running"))}</span>${btn(m("ui.rerun"), "")}${btn("+probe", "probe=1")}${btn("+online", "online=1")}${btn("+review", "review=1")}</header>`;
   return shell("doc-test-runner", `${header}<main><nav class="tree">${tree}</nav><section class="detail">${detail}</section></main>`, version);
 }
 
 export function previewPage(doc: string, lists: { themes: string[]; layouts: string[] }, cur: { theme?: string; layout?: string }, version: number): string {
   const sel = (name: "theme" | "layout", items: string[]) =>
     `<select onchange="const u=new URLSearchParams(location.search);this.value?u.set('${name}',this.value):u.delete('${name}');location.search=u">` +
-    `<option value="">${name}: 文書の既定</option>${items.map((t) => `<option${t === cur[name] ? " selected" : ""}>${h(t)}</option>`).join("")}</select>`;
+    `<option value="">${h(m("ui.doc-default", { name }))}</option>${items.map((t) => `<option${t === cur[name] ? " selected" : ""}>${h(t)}</option>`).join("")}</select>`;
   const q = new URLSearchParams(Object.entries(cur).filter(([, v]) => v) as [string, string][]).toString();
   const body = `<header><b><a href="/t/${enc(doc)}">← ${h(doc)}</a></b>${sel("theme", lists.themes)}${sel("layout", lists.layouts)}</header><iframe src="/pdf/${enc(doc)}${q ? `?${q}` : ""}"></iframe>`;
-  return shell(`${doc} プレビュー`, body, version);
+  return shell(m("ui.preview-title", { doc }), body, version);
 }

@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -38,15 +39,15 @@ interface Table {
 
 /** `{{ref:ID}}` から表を引く */
 export function chartTable(doc: Doc, fig: ChartFigure): Table {
-  const m = fig.data.match(/^\{\{\s*ref:([^}]+?)\s*\}\}$/);
-  if (!m) throw new RenderError(`data は "{{ref:表ID}}" 形式で指定してください（${fig.data}）`);
-  const t = (doc.data.tables ?? []).find((x: Table) => x.id === m[1]);
-  if (!t) throw new RenderError(`data が参照する表 "${m[1]}" がありません`);
-  for (const c of [fig.x, ...fig.y]) if (!t.columns.includes(c)) throw new RenderError(`表 "${t.id}" に列 "${c}" がありません`);
+  const ref = fig.data.match(/^\{\{\s*ref:([^}]+?)\s*\}\}$/);
+  if (!ref) throw new RenderError(m("render.data-form", { data: fig.data }));
+  const t = (doc.data.tables ?? []).find((x: Table) => x.id === ref[1]);
+  if (!t) throw new RenderError(m("render.no-table", { id: ref[1] }));
+  for (const c of [fig.x, ...fig.y]) if (!t.columns.includes(c)) throw new RenderError(m("render.no-column", { table: t.id, column: c }));
   for (const c of fig.y) {
     const i = t.columns.indexOf(c);
     const bad = t.rows.find((r: (string | number)[]) => typeof r[i] !== "number");
-    if (bad) throw new RenderError(`列 "${c}" に数値でない値があります: ${bad[i]}`);
+    if (bad) throw new RenderError(m("render.not-number", { column: c, value: bad[i] }));
   }
   return t;
 }
@@ -56,6 +57,9 @@ export interface ChartStyle {
   width: number;
   height: number;
   font: string;
+  /** 凡例と値軸の見出し（表記スタイル chart.series / chart.value） */
+  series: string;
+  value: string;
 }
 
 export function chartSpec(fig: ChartFigure, t: Table, style: ChartStyle): object {
@@ -65,14 +69,14 @@ export function chartSpec(fig: ChartFigure, t: Table, style: ChartStyle): object
     return { ...base, mark: "arc", encoding: { theta: { field: fig.y[0], type: "quantitative" }, color: { field: fig.x, type: "nominal" } } };
   const enc = {
     x: { field: fig.x, type: fig.chart === "bar" ? "nominal" : "ordinal", sort: null, axis: { labelAngle: 0 } },
-    y: { field: "値", type: "quantitative" },
-    color: { field: "系列", type: "nominal", sort: fig.y },
+    y: { field: style.value, type: "quantitative" },
+    color: { field: style.series, type: "nominal", sort: fig.y },
   };
   return {
     ...base,
-    transform: [{ fold: fig.y, as: ["系列", "値"] }],
+    transform: [{ fold: fig.y, as: [style.series, style.value] }],
     mark: fig.chart === "bar" ? "bar" : { type: "line", point: true },
-    encoding: fig.chart === "bar" ? { ...enc, xOffset: { field: "系列", sort: fig.y } } : enc,
+    encoding: fig.chart === "bar" ? { ...enc, xOffset: { field: style.series, sort: fig.y } } : enc,
   };
 }
 
@@ -95,8 +99,12 @@ export interface RenderOptions {
 }
 
 /** テーマと設定から描画オプションを作る */
-export const renderOptions = (theme: { colors: { primary: string; accent: string }; charts: { width: number; height: number; font: string } }, cfg: { render: { d2Pad: number } }): RenderOptions => ({
-  chart: { colors: [theme.colors.primary, theme.colors.accent], ...theme.charts },
+export const renderOptions = (
+  theme: { colors: { primary: string; accent: string }; charts: { width: number; height: number; font: string } },
+  cfg: { render: { d2Pad: number } },
+  strings: Record<string, string>,
+): RenderOptions => ({
+  chart: { colors: [theme.colors.primary, theme.colors.accent], ...theme.charts, series: strings["chart.series"], value: strings["chart.value"] },
   d2Pad: cfg.render.d2Pad,
 });
 

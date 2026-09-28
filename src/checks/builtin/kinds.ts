@@ -1,10 +1,12 @@
+import { m } from "../../messages";
 import { defineCheck } from "../define";
 
 const days = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
 
 export const noticePeriod = defineCheck({
   id: "terms/notice-period",
-  group: "rules",
+  axis: "fact",
+  scope: "document",
   kinds: ["terms"],
   severity: "error",
   run(doc, ctx) {
@@ -14,7 +16,7 @@ export const noticePeriod = defineCheck({
       .map((a, i) => ({ a, i }))
       .filter(({ a }) => typeof a.notice_days === "number" && gap < a.notice_days)
       .map(({ a, i }) =>
-        ctx.fail(`${doc.defs[a.id].label}は${a.notice_days}日前の告知を定めていますが、updated（${updated}）から effective（${effective}）まで${gap}日しかありません`, {
+        ctx.fail(m("check.terms.notice-period", { label: doc.defs[a.id].label, days: a.notice_days, updated, effective, gap }), {
           blockId: a.id,
           line: doc.lineOf(`/articles/${i}/notice_days`),
         }),
@@ -24,7 +26,8 @@ export const noticePeriod = defineCheck({
 
 export const scheduleOrder = defineCheck({
   id: "schedule/order",
-  group: "rules",
+  axis: "logic",
+  scope: "item",
   kinds: ["proposal"],
   severity: "error",
   run(doc, ctx) {
@@ -32,7 +35,7 @@ export const scheduleOrder = defineCheck({
     const out = [];
     for (let i = 1; i < s.length; i++)
       if (s[i].date < s[i - 1].date)
-        out.push(ctx.fail(`「${s[i].task}」（${s[i].date}）が前の行「${s[i - 1].task}」（${s[i - 1].date}）より前の日付です`, { line: doc.lineOf(`/schedule/${i}`) }));
+        out.push(ctx.fail(m("check.schedule.order", { task: s[i].task, date: s[i].date, prevTask: s[i - 1].task, prevDate: s[i - 1].date }), { line: doc.lineOf(`/schedule/${i}`) }));
     return out;
   },
 });

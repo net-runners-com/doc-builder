@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import Ajv from "ajv";
 import { factSchema } from "./fact";
 import { KINDS, type Kind } from "../types";
@@ -204,9 +205,9 @@ export interface SchemaError {
 
 export function validateDoc(data: unknown): SchemaError[] {
   if (!data || typeof data !== "object" || Array.isArray(data))
-    return [{ ptr: "", message: "文書のルートはマッピング（key: value）でなければなりません" }];
+    return [{ ptr: "", message: m("schema.root") }];
   const kind = (data as any).kind;
-  if (!KINDS.includes(kind)) return [{ ptr: "/kind", message: `kind は ${KINDS.join(" | ")} のいずれかです（現在: ${kind}）` }];
+  if (!KINDS.includes(kind)) return [{ ptr: "/kind", message: m("schema.kind", { kinds: KINDS.join(" | "), kind }) }];
   const v = validators[kind as Kind];
   if (v(data)) return [];
   return (v.errors ?? [])
@@ -214,10 +215,10 @@ export function validateDoc(data: unknown): SchemaError[] {
     .map((e) => {
       const extra =
         e.keyword === "required"
-          ? `必須項目 "${(e.params as any).missingProperty}" がありません`
+          ? m("schema.required", { name: (e.params as any).missingProperty })
           : e.keyword === "additionalProperties"
-            ? `未知の項目 "${(e.params as any).additionalProperty}"`
-            : e.message ?? "不正な値";
+            ? m("schema.unknown", { name: (e.params as any).additionalProperty })
+            : e.message ?? m("schema.invalid");
       return { ptr: e.instancePath, message: `${e.instancePath || "/"}: ${extra}` };
     });
 }

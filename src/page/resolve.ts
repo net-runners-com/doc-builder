@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse } from "yaml";
@@ -18,15 +19,15 @@ export function listLayouts(root: string): string[] {
 export function checkLayoutFile(root: string, id: string, reg: Registry = registry(root)) {
   const p = join(layoutsDir(root), `${id}.yaml`);
   const l = loadYaml(readFileSync(p, "utf8"));
-  if (l.error) return [{ message: `YAML 構文エラー: ${l.error.message}`, line: l.error.line }];
+  if (l.error) return [{ message: m("parse.yaml", { error: l.error.message }), line: l.error.line }];
   return validateLayout(l.data, reg, true).map((e) => ({ message: e.message, line: l.lineOf(e.ptr) }));
 }
 
 function read(root: string, id: string): any {
   const p = join(layoutsDir(root), `${id}.yaml`);
-  if (!existsSync(p)) throw new Error(`レイアウト "${id}" が見つかりません（${p}）`);
+  if (!existsSync(p)) throw new Error(m("layout.not-found", { id, path: p }));
   const d = parse(readFileSync(p, "utf8"));
-  if (!d || typeof d !== "object") throw new Error(`レイアウト "${id}" が空か不正です`);
+  if (!d || typeof d !== "object") throw new Error(m("layout.empty", { id }));
   return d;
 }
 
@@ -41,13 +42,13 @@ export function resolveLayout(root: string, spec: unknown, reg: Registry = regis
   // 区画の空配列は構造上の初期値（内容の既定値ではない）
   const errors: string[] = [];
   const id = typeof spec === "string" ? spec : (spec as any)?.extends;
-  if (!id) errors.push("レイアウト名がありません（文書の layout: か runner.yaml の defaultLayout）");
+  if (!id) errors.push(m("layout.no-name"));
   const chain: any[] = [];
   const seen: string[] = [];
   let cur: string | undefined = id;
   while (cur) {
     if (seen.includes(cur)) {
-      errors.push(`extends が循環しています: ${[...seen, cur].join(" → ")}`);
+      errors.push(m("extends.cycle", { chain: [...seen, cur].join(" → ") }));
       break;
     }
     seen.push(cur);
@@ -68,7 +69,7 @@ export function resolveLayout(root: string, spec: unknown, reg: Registry = regis
   }
   delete merged.extends;
   errors.push(...validateLayout(merged, reg).map((e) => `${e.ptr}: ${e.message}`));
-  if (!merged.page_numbers) errors.push("page_numbers がありません");
+  if (!merged.page_numbers) errors.push(m("layout.no-page-numbers"));
   if (errors.length) {
     // 壊れたレイアウトでも出力できるよう、壊れた区画は空にする
     for (const r of REGIONS) if (!Array.isArray(merged[r]) || validateLayout({ [r]: merged[r] }, reg).length) merged[r] = [];

@@ -1,3 +1,4 @@
+import { m } from "../messages";
 import Ajv from "ajv";
 import type { Registry } from "./components";
 import { REGIONS, type LNode, type Region } from "./types";
@@ -16,10 +17,10 @@ const START = ["cover", "front", "body"];
 /** レイアウト（ファイル全体または解決済み）の木を検証する */
 export function validateLayout(data: any, reg: Registry, partial = false): LayoutError[] {
   const errs: LayoutError[] = [];
-  if (!data || typeof data !== "object" || Array.isArray(data)) return [{ ptr: "", message: "レイアウトのルートはマッピングでなければなりません" }];
-  for (const k of Object.keys(data)) if (!TOP.has(k)) errs.push({ ptr: `/${k}`, message: `未知の項目 "${k}"（使えるのは ${[...TOP].join(", ")}）` });
+  if (!data || typeof data !== "object" || Array.isArray(data)) return [{ ptr: "", message: m("layout.root") }];
+  for (const k of Object.keys(data)) if (!TOP.has(k)) errs.push({ ptr: `/${k}`, message: m("layout.unknown-key", { key: k, keys: [...TOP].join(", ") }) });
   if (data.page_numbers !== undefined && !START.includes(data.page_numbers?.start_at))
-    errs.push({ ptr: "/page_numbers", message: `page_numbers.start_at は ${START.join(" | ")} のいずれかです` });
+    errs.push({ ptr: "/page_numbers", message: m("layout.start-at", { values: START.join(" | ") }) });
   for (const r of REGIONS) {
     const v = data[r];
     if (v === undefined || v === null) {
@@ -27,7 +28,7 @@ export function validateLayout(data: any, reg: Registry, partial = false): Layou
       continue;
     }
     if (!Array.isArray(v)) {
-      errs.push({ ptr: `/${r}`, message: `${r} は要素の配列で書いてください` });
+      errs.push({ ptr: `/${r}`, message: m("layout.region-array", { region: r }) });
       continue;
     }
     v.forEach((n: LNode, i: number) => node(n, r, `/${r}/${i}`));
@@ -39,19 +40,19 @@ export function validateLayout(data: any, reg: Registry, partial = false): Layou
     let props: any;
     if (typeof n === "string") [name, props] = [n, undefined];
     else if (n && typeof n === "object" && !Array.isArray(n) && Object.keys(n).length === 1) [name, props] = Object.entries(n)[0];
-    else return errs.push({ ptr, message: "要素は「部品名」か「部品名: 設定」の形で書いてください" });
+    else return errs.push({ ptr, message: m("layout.node-form") });
     const def = reg[name];
-    if (!def) return errs.push({ ptr, message: `未知の部品 "${name}"` });
-    if (!def.regions.includes(region)) errs.push({ ptr, message: `${name} は ${region} に置けません（置ける区画: ${def.regions.join(", ")}）` });
+    if (!def) return errs.push({ ptr, message: m("layout.unknown-component", { name }) });
+    if (!def.regions.includes(region)) errs.push({ ptr, message: m("layout.region-denied", { name, region, regions: def.regions.join(", ") }) });
     const pptr = typeof n === "string" ? ptr : `${ptr}/${name}`;
     if (!def.container && props && typeof props === "object" && "children" in props) {
-      errs.push({ ptr: pptr, message: `${name} は子要素（children）を持てません` });
+      errs.push({ ptr: pptr, message: m("layout.no-children", { name }) });
       return;
     }
     const target = props === undefined ? (isScalarSchema(def.props) ? undefined : null) : props;
     const v = compile(def.props);
     const ok = target === null ? v(null) || v({}) : v(target);
-    if (!ok && props === undefined) errs.push({ ptr: pptr, message: `${name}: 設定が必要です` });
+    if (!ok && props === undefined) errs.push({ ptr: pptr, message: m("layout.props-required", { name }) });
     else if (!ok)
       for (const e of v.errors ?? []) {
         if (e.keyword === "anyOf" && (v.errors?.length ?? 0) > 1) continue;
