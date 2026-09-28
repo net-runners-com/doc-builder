@@ -402,7 +402,7 @@ runner.yaml         既定テーマ、review.model、source 期限日数、port
 
 ### A.3 対象外
 
-- SSH 経由のリモート検証（test-runner は検証対象のマシン上で実行する）
+- SSH 経由のリモート検証（doc-builder は検証対象のマシン上で実行する）
 - 禁止語リスト
 
 ---
