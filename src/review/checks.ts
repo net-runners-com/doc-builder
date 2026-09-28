@@ -79,7 +79,7 @@ export function reviewChecks(root: string, doc: Doc): Check[] {
           mkdirSync(join(ctx.cacheDir, "review"), { recursive: true });
           writeFileSync(file, JSON.stringify(out));
         }
-        if (out.verdict === "pass") return [];
+        if (!out || out.verdict === "pass") return [];
         const fs = out.findings.length ? out.findings : [{ reason: "不合格（理由なし）" }];
         return fs.map((f: { blockId?: string; reason: string }) =>
           ctx.fail(f.reason, { blockId: f.blockId, line: f.blockId ? doc.defs[f.blockId]?.line : undefined }),

@@ -1,21 +1,23 @@
 import { basename, dirname, extname } from "node:path";
 import { validateDoc } from "../schema/doc";
+import { factText, type Fact } from "../facts/types";
 import type { BuildErrorId, Def, Doc, Finding, Numbering, TextNode } from "../types";
 import { evalCalc, formatNumber } from "./calc";
 import { loadYaml } from "./yaml";
 
 export const TOKEN = /\{\{\s*([a-z_.]+)(?::([^}]*?))?\s*\}\}/g;
-export const MARKER = /⟦(img|fig):([^⟧]+)⟧/g;
+export const MARKER = /⟦(img|fig|cap):([^⟧]+)⟧/g;
 
 /** 本文として扱わないキー（ID・パス・日付・図のソースなど） */
 const SKIP = new Set([
   "id", "kind", "theme", "path", "url", "accessed", "updated", "effective", "version",
   "date", "type", "chart", "x", "y", "data", "source", "table", "unit_price", "qty",
+  "verify", "capture",
 ]);
 
 const fmt = (tpl: string, n: number | string) => tpl.replace("{n}", String(n));
 
-export function buildDoc(path: string, src: string, numbering: Numbering): Doc {
+export function buildDoc(path: string, src: string, numbering: Numbering, project: Record<string, Fact> = {}): Doc {
   const loaded = loadYaml(src);
   const name = basename(path, extname(path));
   const buildErrors: Doc["buildErrors"] = [];
@@ -26,6 +28,8 @@ export function buildDoc(path: string, src: string, numbering: Numbering): Doc {
   const texts: TextNode[] = [];
   const placements: string[] = [];
   const citations: string[] = [];
+  const facts: Record<string, Fact> = {};
+  const factRefs: string[] = [];
   const data = loaded.data;
   const lineOf = loaded.lineOf;
 
@@ -39,6 +43,8 @@ export function buildDoc(path: string, src: string, numbering: Numbering): Doc {
     texts,
     placements,
     citations,
+    facts,
+    factRefs,
     buildErrors,
     lineOf,
     expand: (text, block) => expandText(text, block),
@@ -79,6 +85,13 @@ export function buildDoc(path: string, src: string, numbering: Numbering): Doc {
   (data.images ?? []).forEach((m: any, i: number) => define(m.id, { type: "image", ptr: `/images/${i}` }));
   (data.figures ?? []).forEach((f: any, i: number) => define(f.id, { type: "figure", ptr: `/figures/${i}` }));
   (data.sources ?? []).forEach((s: any, i: number) => define(s.id, { type: "source", ptr: `/sources/${i}` }));
+  (data.facts ?? []).forEach((f: any, i: number) => {
+    const line = lineOf(`/facts/${i}`);
+    if (project[f.id]) err("ref/resolve", `fact ID "${f.id}" は facts.yaml と重複しています`, { blockId: f.id, line });
+    else if (facts[f.id]) err("ref/resolve", `fact ID "${f.id}" が重複しています`, { blockId: f.id, line });
+    else facts[f.id] = { ...f, origin: name, line };
+  });
+  const factOf = (id?: string) => (id ? facts[id] ?? project[id] : undefined);
 
   // --- 本文テキストの収集 ---
   const quotes: { ptr: string; source: string; blockId?: string }[] = [];
@@ -107,6 +120,7 @@ export function buildDoc(path: string, src: string, numbering: Numbering): Doc {
       const [, n, arg] = m;
       if ((n === "img" || n === "fig") && arg && !placements.includes(arg)) placements.push(arg);
       if (n === "cite" && arg && !citations.includes(arg)) citations.push(arg);
+      if ((n === "fact" || n === "capture") && arg && !factRefs.includes(arg.trim())) factRefs.push(arg.trim());
     }
   }
   placements.forEach((id, i) => {
@@ -141,6 +155,15 @@ export function buildDoc(path: string, src: string, numbering: Numbering): Doc {
           const want = n === "img" ? "image" : "figure";
           if (defs[arg ?? ""]?.type !== want) return issue("ref/resolve", `未定義の${n === "img" ? "画像" : "図"} "${arg}"`);
           return `⟦${n}:${arg}⟧`;
+        }
+        case "fact": {
+          const f = factOf(arg);
+          return f ? factText(f) : issue("ref/resolve", `未定義の fact "${arg}"`);
+        }
+        case "capture": {
+          const f = factOf(arg);
+          if (!f?.capture) return issue("ref/resolve", `capture を持つ fact "${arg}" がありません`);
+          return `⟦cap:${arg}⟧`;
         }
         case "calc":
           try {

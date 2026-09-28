@@ -108,7 +108,7 @@ export function treePage(root: string, report: Report, f: Focus, files: Record<s
 
   const here = f.doc ? `/t/${[f.doc, f.group, f.checkId].filter(Boolean).map((s) => s!.split("/").map(enc).join("/")).join("/")}` : "/";
   const btn = (label: string, q: string) => `<form method="post" action="/api/run?${q}&back=${enc(here)}"><button>${label}</button></form>`;
-  const header = `<header><b>${icon(all)} doc-test-runner</b><span id="running" class="n" hidden>実行中…</span>${btn("再実行", "")}${btn("+online", "online=1")}${btn("+review", "review=1")}</header>`;
+  const header = `<header><b>${icon(all)} doc-test-runner</b><span id="running" class="n" hidden>実行中…</span>${btn("再実行", "")}${btn("+probe", "probe=1")}${btn("+online", "online=1")}${btn("+review", "review=1")}</header>`;
   return shell("doc-test-runner", `${header}<main><nav class="tree">${tree}</nav><section class="detail">${detail}</section></main>`, version);
 }
 

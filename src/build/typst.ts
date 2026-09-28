@@ -54,6 +54,8 @@ function node(n: Node, asset: (p: string, id: string) => string): string {
       return n.items.map((s) => `- ${inline(s)}`).join("\n") + "\n";
     case "kv":
       return `#strong[${esc(n.label)}：] ${inline(n.text)}\n`;
+    case "code":
+      return `#raw(block: true, ${str(n.text.replace(/\n$/, ""))})\n`;
     case "table": {
       const cells = (r: string[]) => r.map((c) => `[${inline(c)}]`).join(", ");
       const t = `table(columns: ${n.columns.length}, table.header(${cells(n.columns)}), ${n.rows.map(cells).join(", ")})`;

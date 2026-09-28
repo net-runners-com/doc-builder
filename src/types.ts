@@ -1,7 +1,8 @@
+import type { Fact } from "./facts/types";
 export type Kind = "terms" | "procedure" | "proposal" | "guide";
 export const KINDS: Kind[] = ["terms", "procedure", "proposal", "guide"];
-export type Group = "schema" | "rules" | "online" | "review";
-export const GROUPS: Group[] = ["schema", "rules", "online", "review"];
+export type Group = "schema" | "rules" | "probe" | "online" | "review";
+export const GROUPS: Group[] = ["schema", "rules", "probe", "online", "review"];
 export type Status = "pass" | "fail" | "warn" | "unknown" | "skipped";
 
 export interface Loc {
@@ -28,7 +29,7 @@ export interface Report {
   results: CheckResult[];
 }
 
-export type DefType = "article" | "step" | "section" | "table" | "figure" | "image" | "source";
+export type DefType = "fact" | "article" | "step" | "section" | "table" | "figure" | "image" | "source";
 export interface Def {
   type: DefType;
   ptr: string;
@@ -58,6 +59,10 @@ export interface Doc {
   texts: TextNode[];
   placements: string[];
   citations: string[];
+  /** 文書内で定義した fact */
+  facts: Record<string, Fact>;
+  /** 本文から参照した fact / capture の ID */
+  factRefs: string[];
   buildErrors: { checkId: BuildErrorId; finding: Finding }[];
   lineOf(ptr: string): number | undefined;
   expand(text: string, block?: Record<string, unknown>): string;

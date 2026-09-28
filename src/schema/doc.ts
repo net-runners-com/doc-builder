@@ -1,4 +1,5 @@
 import Ajv from "ajv";
+import { factSchema } from "./fact";
 import { KINDS, type Kind } from "../types";
 
 const str = { type: "string" };
@@ -34,6 +35,7 @@ const meta = (extra: string[]) => ({
 
 const common = {
   kind: { enum: KINDS },
+  facts: { type: "array", items: factSchema },
   theme: { anyOf: [str, { type: "object" }] },
   glossary: {
     type: "array",

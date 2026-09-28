@@ -6,7 +6,7 @@ import { loadDoc, runAll } from "../src/runner/run";
 
 const root = join(import.meta.dir, "..");
 const report = await runAll(root, { today: new Date("2026-09-28") });
-const fails = (doc: string) => report.results.filter((r) => r.doc === doc && r.status === "fail").map((r) => r.checkId).sort();
+const fails = (doc: string) => report.results.filter((r) => r.doc === doc && r.group !== "review" && r.status === "fail").map((r) => r.checkId).sort();
 
 // spec §11: samples/README.md の正解のうち、レビュー以外を検出する
 test.each([

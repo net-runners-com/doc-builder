@@ -10,6 +10,8 @@ const { values: v, positionals } = parseArgs({
   options: {
     online: { type: "boolean", default: false },
     review: { type: "boolean", default: false },
+    probe: { type: "boolean", default: false },
+    "update-snapshots": { type: "boolean", default: false },
     strict: { type: "boolean", default: false },
     json: { type: "boolean", default: false },
     theme: { type: "string" },
@@ -22,7 +24,7 @@ const root = process.cwd();
 
 switch (cmd) {
   case "test": {
-    const report = await runAll(root, { online: v.online, review: v.review, theme: v.theme, paths });
+    const report = await runAll(root, { online: v.online, review: v.review, probe: v.probe || v["update-snapshots"], updateSnapshots: v["update-snapshots"], theme: v.theme, paths });
     console.log(v.json ? JSON.stringify(report, null, 2) : formatText(report));
     process.exit(exitCode(report, v.strict));
   }
@@ -41,6 +43,6 @@ switch (cmd) {
     break;
   }
   default:
-    console.error("usage: bun src/cli.ts <test|build|serve> [paths...] [--online] [--review] [--theme a,b] [--strict] [--json]");
+    console.error("usage: bun src/cli.ts <test|build|serve> [paths...] [--online] [--review] [--probe] [--update-snapshots] [--theme a,b] [--strict] [--json]");
     process.exit(2);
 }

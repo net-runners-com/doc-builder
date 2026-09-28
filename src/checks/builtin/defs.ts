@@ -63,6 +63,8 @@ export const unusedDefs = defineCheck({
         ((d.type === "image" || d.type === "figure") && !doc.placements.includes(id));
       if (unused) out.push(ctx.fail(`${d.type} "${id}" は本文で使われていません`, { blockId: id, line: d.line }));
     }
+    for (const f of Object.values(doc.facts))
+      if (!doc.factRefs.includes(f.id)) out.push(ctx.fail(`fact "${f.id}" は本文で使われていません`, { blockId: f.id, line: f.line }));
     return out;
   },
 });

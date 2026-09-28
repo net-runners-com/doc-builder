@@ -4,6 +4,7 @@ import { cacheDir, loadConfig } from "../config";
 import { ToolMissing } from "../errors";
 import { renderFigures } from "../render";
 import { discover, loadDoc } from "../runner/run";
+import { readSnapshot } from "../facts/load";
 import { layout } from "./layout";
 import { emitMarkdown, MD_IGNORED } from "./md";
 import { emitPdf } from "./typst";
@@ -33,7 +34,7 @@ export async function buildAll(root: string, opts: { paths?: string[]; themes?: 
         res.errors.push(...errors.map((e) => `${doc.name}: 図 "${e.id}": ${e.error.message}`));
         continue;
       }
-      const l = layout(doc, theme, svgs);
+      const l = layout(doc, theme, svgs, (id) => readSnapshot(root, id));
       mkdirSync(outDir, { recursive: true });
       if (formats.includes("md")) {
         const p = join(outDir, `${doc.name}.md`);

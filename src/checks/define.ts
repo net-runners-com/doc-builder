@@ -6,6 +6,8 @@ import type { Doc, Finding, Group, Kind, Loc } from "../types";
 export interface RunOptions {
   online?: boolean;
   review?: boolean;
+  probe?: boolean;
+  updateSnapshots?: boolean;
   theme?: string;
   paths?: string[];
   today?: Date;
@@ -32,12 +34,14 @@ export interface Check {
   run(doc: Doc, ctx: CheckCtx): Finding[] | Promise<Finding[]>;
 }
 
-/** 文書に紐づかないチェック（テーマなど）。結果の doc は "@themes" */
+export type CheckOutput = Finding[] | { findings: Finding[]; note?: string };
+
+/** 文書に紐づかないチェック（テーマ・fact など）。結果の doc は "@themes" / "@facts" */
 export interface ProjectCheck {
   id: string;
-  group: "rules";
+  group: Group;
   severity: "error" | "warn";
-  run(ctx: BaseCtx): Finding[] | Promise<Finding[]>;
+  run(ctx: BaseCtx): CheckOutput | Promise<CheckOutput>;
 }
 
 export const defineCheck = (c: Check) => c;

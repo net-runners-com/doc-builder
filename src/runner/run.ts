@@ -2,13 +2,16 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { builtinChecks, projectChecks } from "../checks/builtin";
 import { Skip, Unknown } from "../errors";
-import type { BaseCtx, Check, CheckCtx, RunOptions } from "../checks/define";
+import { FACTS_DOC, factsValid, probeCheck, probeTargets, unusedFacts } from "../checks/builtin/facts";
+import type { BaseCtx, Check, CheckCtx, CheckOutput, ProjectCheck, RunOptions } from "../checks/define";
+import { loadFacts } from "../facts/load";
+import type { Fact } from "../facts/types";
 import { cacheDir, loadConfig, type Config } from "../config";
 import { buildDoc } from "../parse/doc";
 import { loadYaml } from "../parse/yaml";
 import { reviewChecks } from "../review/checks";
 import { resolveTheme } from "../theme/resolve";
-import type { CheckResult, Doc, Finding, Report } from "../types";
+import type { CheckResult, Report } from "../types";
 
 export const PROJECT_DOC = "@themes";
 
@@ -34,24 +37,25 @@ async function loadUserChecks(root: string): Promise<Check[]> {
   return out;
 }
 
-export function loadDoc(root: string, config: Config, file: string, themeOverride?: string) {
+export function loadDoc(root: string, config: Config, file: string, themeOverride?: string, facts?: Record<string, Fact>) {
   const src = readFileSync(file, "utf8");
   const spec = themeOverride ?? loadYaml(src).data?.theme ?? config.defaultTheme;
   const theme = resolveTheme(root, spec, join(file, ".."));
-  const doc = buildDoc(file, src, theme.numbering);
+  const doc = buildDoc(file, src, theme.numbering, facts ?? loadFacts(root).facts);
   return { doc, theme };
 }
 
 async function runOne(
   check: { id: string; group: CheckResult["group"]; severity: "error" | "warn" },
   docNameStr: string,
-  fn: () => Finding[] | Promise<Finding[]>,
+  fn: () => CheckOutput | Promise<CheckOutput>,
 ): Promise<CheckResult> {
   const base = { doc: docNameStr, group: check.group, checkId: check.id };
   try {
-    const findings = await fn();
+    const out = await fn();
+    const { findings, note } = Array.isArray(out) ? { findings: out, note: undefined } : out;
     const status = findings.length ? (check.severity === "error" ? "fail" : "warn") : "pass";
-    return { ...base, status, findings };
+    return { ...base, status, findings, ...(note ? { note } : {}) };
   } catch (e) {
     if (e instanceof Skip) return { ...base, status: "skipped", findings: [], note: e.message };
     if (e instanceof Unknown) return { ...base, status: "unknown", findings: [], note: e.message };
@@ -73,17 +77,22 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
     cacheDir: cacheDir(root),
     fail: (message, loc = {}) => ({ message, loc: { doc, ...loc } }),
   });
+  const project = async (doc: string, checks: ProjectCheck[]) => {
+    for (const c of checks) {
+      const ctx = base(doc);
+      results.push(await runOne(c, doc, () => c.run(ctx)));
+    }
+  };
 
-  for (const c of projectChecks) {
-    const ctx = base(PROJECT_DOC);
-    results.push(await runOne(c, PROJECT_DOC, () => c.run(ctx)));
-  }
+  const facts = loadFacts(root).facts;
+  const loaded = discover(root, config, options.paths).map((f) => loadDoc(root, config, f, options.theme?.split(",")[0], facts));
+  const docs = loaded.map((l) => l.doc);
 
-  const files = discover(root, config, options.paths);
-  const docs: string[] = [];
-  for (const file of files) {
-    const { doc, theme } = loadDoc(root, config, file, options.theme?.split(",")[0]);
-    docs.push(doc.name);
+  await project(PROJECT_DOC, projectChecks);
+  // 実機検証を先に走らせ、fact/refs が同じ実行の結果を読めるようにする
+  await project(FACTS_DOC, [factsValid, ...probeTargets(root, docs).map(probeCheck)]);
+
+  for (const { doc, theme } of loaded) {
     const ctx: CheckCtx = { ...base(doc.name), theme };
     const checks = [...builtinChecks, ...userChecks, ...reviewChecks(root, doc)].filter(
       (c) => c.group === "schema" || !doc.kind || c.kinds.includes("*") || c.kinds.includes(doc.kind),
@@ -97,7 +106,8 @@ export async function runAll(root: string, options: RunOptions = {}): Promise<Re
       results.push(await runOne(c, doc.name, () => c.run(doc, ctx)));
     }
   }
-  return { startedAt, finishedAt: new Date().toISOString(), docs, results };
+  if (!options.paths?.length) await project(FACTS_DOC, [unusedFacts(docs)]);
+  return { startedAt, finishedAt: new Date().toISOString(), docs: docs.map((d) => d.name), results };
 }
 
 export const relPath = (root: string, p: string) => relative(root, p);

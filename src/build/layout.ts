@@ -6,6 +6,7 @@ import type { Doc } from "../types";
 
 export type Node =
   | { t: "h"; level: 2 | 3 | 4; text: string }
+  | { t: "code"; text: string }
   | { t: "p"; text: string }
   | { t: "ol" | "ul"; items: string[] }
   | { t: "table"; columns: string[]; rows: string[][]; caption?: string }
@@ -33,7 +34,7 @@ export const FIELD_LABEL: Record<string, string> = {
 /** figures の id → 描画済み SVG の絶対パス */
 export type Assets = Record<string, string>;
 
-export function layout(doc: Doc, theme: ResolvedTheme, assets: Assets): Layout {
+export function layout(doc: Doc, theme: ResolvedTheme, assets: Assets, snapshot: (id: string) => string | undefined = () => undefined): Layout {
   const d = doc.data;
   const nodes: Node[] = [];
   const x = (s: string, block?: Record<string, unknown>) => doc.expand(s, block);
@@ -55,7 +56,7 @@ export function layout(doc: Doc, theme: ResolvedTheme, assets: Assets): Layout {
     for (const m of s.matchAll(MARKER)) {
       const before = s.slice(last, m.index).trim();
       if (before) nodes.push({ t: "p", text: before });
-      nodes.push(figureNode(m[1], m[2]));
+      nodes.push(m[1] === "cap" ? { t: "code", text: snapshot(m[2]) ?? "（未取得）" } : figureNode(m[1], m[2]));
       last = m.index! + m[0].length;
     }
     const rest = s.slice(last).trim();

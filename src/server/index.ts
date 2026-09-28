@@ -46,7 +46,7 @@ export async function startServer(root: string, opts: ServeOptions = {}) {
       if (p === "/api/state") return Response.json({ version, running });
       if (p === "/api/report") return Response.json(report);
       if (p === "/api/run" && req.method === "POST") {
-        void rerun({ online: url.searchParams.has("online"), review: url.searchParams.has("review") });
+        void rerun({ online: url.searchParams.has("online"), review: url.searchParams.has("review"), probe: url.searchParams.has("probe") });
         return Response.redirect(url.searchParams.get("back") ?? "/", 303);
       }
       if (p === "/" || p.startsWith("/t/")) return html(treePage(root, report, parseFocus(p), files(), version));

@@ -32,6 +32,11 @@ export function emitMarkdown(l: Layout, theme: ResolvedTheme, outDir: string, do
       case "kv":
         out.push(`**${n.label}：** ${n.text}`, "");
         break;
+      case "code": {
+        const fence = n.text.includes("```") ? "~~~~" : "```";
+        out.push(fence + "text", n.text.replace(/\n$/, ""), fence, "");
+        break;
+      }
       case "table":
         if (n.caption) out.push(`**${n.caption}**`, "");
         out.push(`| ${n.columns.map(cell).join(" | ")} |`, `|${n.columns.map(() => "---").join("|")}|`, ...n.rows.map((r) => `| ${r.map(cell).join(" | ")} |`), "");

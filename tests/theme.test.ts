@@ -46,7 +46,7 @@ test("extends の循環・欠落はエラー、採番は FALLBACK で続行", ()
 
 test("theme/valid は全テーマを検査する", async () => {
   writeFileSync(join(root, "themes", "d.yaml"), "colors: { primary: red }\n");
-  const msgs = (await themeValid.run(ctx())).map((f) => f.message).join("\n");
+  const msgs = ((await themeValid.run(ctx())) as any[]).map((f) => f.message).join("\n");
   expect(msgs).toContain("a: extends が循環");
   expect(msgs).toContain("d: /colors/primary");
   expect(msgs).not.toContain("sakura");
@@ -55,7 +55,7 @@ test("theme/valid は全テーマを検査する", async () => {
 test("theme/contrast", async () => {
   expect(contrast("#000000", "#FFFFFF")).toBeCloseTo(21, 0);
   writeFileSync(join(root, "themes", "pale.yaml"), 'extends: default\ncolors: { text: "#DDDDDD" }\n');
-  const msgs = (await themeContrast.run(ctx())).map((f) => f.message);
+  const msgs = ((await themeContrast.run(ctx())) as any[]).map((f) => f.message);
   expect(msgs.some((m) => m.startsWith("pale: colors.text"))).toBe(true);
   expect(msgs.some((m) => m.startsWith("sakura"))).toBe(false);
 });
