@@ -79,6 +79,7 @@ defineCheck({
 |------|---------|--------------|
 | 組み込みチェック | `src/checks/builtin/*.ts` | 各文書 |
 | 自作チェック | `checks/*.ts`（`export default defineCheck(...)`） | 各文書 |
+| 文書のテスト | `doctests/<文書名>.yaml`（`expect` / `blocks` / `flows`。本文の中の `expect:` `flows:` も併せて実行） | その文書 |
 | レビュー観点 | `reviews/_common.yaml` と `reviews/<kind>.yaml` | 各文書 |
 | 資料全体のチェック | テーマ・パレット・レイアウト・表記スタイル・レビュー観点の妥当性 | `@themes` |
 | fact のチェック | `facts.yaml` の妥当性、実機検証（`probe/<ID>`）、未使用の fact | `@facts` |
@@ -123,6 +124,7 @@ defineCheck({
 | layout/data | レイアウトの部品が必要とするデータ（会社情報・承認欄・改訂履歴など） |
 | approval/complete | 版 1.0 以上の承認欄の空欄、印影の画像 |
 | flow/refs | フローの行き先・シナリオの手順が存在するか |
+| tests/valid, tests/orphan | テストファイルの構文・スキーマ・存在しないブロック ID、文書の無いテストファイル |
 | expect/structure | 項目ごとの期待値（fact・参照を含むか） |
 | @themes 側 | theme/valid、layout/valid、wording/valid、review/valid |
 
@@ -207,7 +209,8 @@ defineCheck({
 
 | やりたいこと | 置く場所 |
 |-------------|---------|
-| チェックを足す | `checks/<名前>.ts` に `defineCheck`。文言は `messages.json` に ID で |
+| 全文書に効くチェックを足す | `checks/<名前>.ts` に `defineCheck`。文言は `messages.json` に ID で |
+| 1 つの文書のテストを書く | `doctests/<文書名>.yaml`（`blocks: { <ID>: [判定条件] }`、`flows:`） |
 | レビュー観点を足す | `reviews/<kind>.yaml` に `id` / `ask` / `why_not_rule` |
 | 事実を足す | `facts.yaml` に `value` / `claim` / `verify` / `capture` |
 | 見た目を変える | `themes/`（文字組み・改ページ）、`palettes/`（色）、`layouts/`（配置）、`components/`（部品） |

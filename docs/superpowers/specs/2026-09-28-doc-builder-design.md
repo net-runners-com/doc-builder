@@ -628,3 +628,20 @@ Vite の manifest と同様に、出力ファイル（dist からの相対パス
   - `flow/coverage`（warn）: どのシナリオでも通らない分岐・終端、分岐があるのにシナリオが無い。
   - `flow/troubleshooting`（error）: トラブルシューティングの `step` / `branch` / `goto` を分岐と突き合わせる。branch の行き先と goto の不一致、対処文の {{ref}} と goto の不一致、手順を参照しているのに goto が無い。
 - 地の文の意味の矛盾そのものは判定しない。行き先を構造（goto・branch）として書かせ、構造同士を突き合わせる。
+
+---
+
+## 追補 H: 文書のテストを本文から分ける（2026-09-29）
+
+- `doctests/<文書名>.yaml`（`runner.yaml` の `testsDir`）に、その文書のテストを置く。
+  ```yaml
+  expect: [...]            # 文書全体の判定条件
+  blocks:                  # ブロック ID ごとの判定条件
+    next: [{ contains: [期限] }, { contains_fact: sales-contact }]
+  flows: [...]             # 手順書のシナリオ
+  ```
+- 本文の中の `expect:` / `flows:` も残し、両方を実行する。
+- テストファイル由来の指摘は `loc.file` にテストファイルのパスを持ち、行番号はテストファイルの行。UI の抜粋もそのファイルを表示する。
+- `tests/valid`（文書ごと）: 構文・スキーマ・存在しないブロック ID。壊れていても文書のチェックは止めない。`tests/orphan`（@themes）: 対応する文書の無いテストファイル。
+- manifest の入力に role `test`。init で `doctests/example.yaml` を作る。
+- サンプル: `doctests/setup-procedure.yaml`（フロー 3 本）、`doctests/proposal.yaml`（R4 を expect で検出。旧来は LLM）。

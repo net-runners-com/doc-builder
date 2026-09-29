@@ -6,7 +6,11 @@ import { defineCheck } from "../define";
 const steps = (doc: Doc): Step[] => doc.data.steps ?? [];
 const label = (doc: Doc, id: string) => doc.defs[id]?.label ?? id;
 const loc = (doc: Doc, id: string) => ({ blockId: id, line: doc.defs[id]?.line });
-const flowLine = (doc: Doc, i: number) => doc.lineOf(`/flows/${i}`);
+/** 本文の flows: と doctests/<文書名>.yaml の flows: を合わせる（指摘の行は書いた側のファイル） */
+const flowsOf = (doc: Doc) => [
+  ...((doc.data.flows ?? []) as any[]).map((f, i) => ({ f, where: { line: doc.lineOf(`/flows/${i}`) } })),
+  ...((doc.tests?.data.flows ?? []) as any[]).map((f, i) => ({ f, where: { file: doc.tests!.path, line: doc.tests!.lineOf(`/flows/${i}`) } })),
+];
 
 export const flowRefs = defineCheck({
   id: "flow/refs",
@@ -17,10 +21,8 @@ export const flowRefs = defineCheck({
   run(doc, ctx) {
     const g = buildGraph(steps(doc));
     const out = danglingEdges(g).map((e) => ctx.fail(m("check.flow.dangling", { from: label(doc, e.from), to: e.to }), loc(doc, e.from)));
-    (doc.data.flows ?? []).forEach((f: any, i: number) => {
-      for (const s of [...Object.keys(f.choose ?? {}), f.expect_end])
-        if (!g.ids.includes(s)) out.push(ctx.fail(m("check.flow.unknown-step", { flow: f.name, id: s }), { line: flowLine(doc, i) }));
-    });
+    for (const { f, where } of flowsOf(doc))
+      for (const s of [...Object.keys(f.choose ?? {}), f.expect_end]) if (!g.ids.includes(s)) out.push(ctx.fail(m("check.flow.unknown-step", { flow: f.name, id: s }), where));
     return out;
   },
 });
@@ -83,10 +85,9 @@ export const flowScenario = defineCheck({
     const ss = steps(doc);
     const g = buildGraph(ss);
     const out = [];
-    for (const [i, f] of ((doc.data.flows ?? []) as any[]).entries()) {
+    for (const { f, where } of flowsOf(doc)) {
       const r = simulate(ss, g, f.choose ?? {}, doc.data.initial_state ?? []);
       const path = r.path.map((id) => label(doc, id)).join(" → ");
-      const where = { line: flowLine(doc, i) };
       if (r.error === "bad-choice") out.push(ctx.fail(m("check.flow.bad-choice", { flow: f.name, step: label(doc, r.at!), choice: r.choice ?? "" }), where));
       else if (r.error === "loop") out.push(ctx.fail(m("check.flow.scenario-loop", { flow: f.name, path }), where));
       else if (r.end !== f.expect_end) out.push(ctx.fail(m("check.flow.wrong-end", { flow: f.name, want: label(doc, f.expect_end), got: label(doc, r.end!), path }), where));
@@ -164,7 +165,7 @@ export const flowCoverage = defineCheck({
     const g = buildGraph(ss);
     const branches = ss.flatMap((s) => (s.branches ?? []).map((b) => ({ from: s.id, to: b.goto, cond: b.if })));
     if (!branches.length) return [];
-    const flows = (doc.data.flows ?? []) as any[];
+    const flows = flowsOf(doc).map((x) => x.f);
     if (!flows.length) return [ctx.fail(m("check.flow.no-scenarios", { n: branches.length }))];
     const walked = new Set<string>();
     const ends = new Set<string>();

@@ -9,6 +9,7 @@ import { loadFacts } from "../facts/load";
 import type { Fact } from "../facts/types";
 import { loadConfig, workRoot, type Config } from "../config";
 import { buildDoc } from "../parse/doc";
+import { loadDocTests } from "../parse/tests";
 import { loadYaml } from "../parse/yaml";
 import { reviewChecks } from "../review/checks";
 import { resolveLayout } from "../page/resolve";
@@ -52,6 +53,7 @@ export function loadDoc(root: string, config: Config, file: string, over: LoadOv
   const theme = resolveTheme(root, over.theme ?? data?.theme ?? config.defaultTheme, join(file, ".."));
   const layout = resolveLayout(root, over.layout ?? data?.layout ?? config.defaultLayout);
   const doc = buildDoc(file, src, { facts: facts ?? loadFacts(root).facts, root, wording: over.wording });
+  doc.tests = loadDocTests(root, config, doc.name);
   return { doc, theme, layout };
 }
 

@@ -90,7 +90,7 @@ export function treePage(root: string, report: Report, f: Focus, files: Record<s
     const r = scoped[0];
     const x = r?.findings[f.n - 1];
     detail = x
-      ? `<h3>${icon(r.status)} ${h(r.checkId)} #${f.n}</h3><div class="msg">${h(x.message)}</div><div class="n">${h(where(x))}</div>${excerpt(root, files[r.doc], x.loc.line)}`
+      ? `<h3>${icon(r.status)} ${h(r.checkId)} #${f.n}</h3><div class="msg">${h(x.message)}</div><div class="n">${h(where(x))}</div>${excerpt(root, x.loc.file ?? files[r.doc], x.loc.line)}`
       : `<p>${h(m("ui.not-found"))}</p>`;
   } else {
     const bad = scoped.filter((r) => r.status === "fail" || r.status === "warn" || r.status === "unknown");

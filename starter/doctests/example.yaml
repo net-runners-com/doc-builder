@@ -1,0 +1,5 @@
+# content/example.yaml のテスト（ブロック ID ごとに期待値を書く）
+blocks:
+  overview:
+    - max_sentences: 3
+    - not_contains: [TBD]

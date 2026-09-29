@@ -71,16 +71,24 @@ export const styleMix = defineCheck({
 
 /** 条・手順・節・文書の expect: を評価する */
 function expectTargets(doc: Doc) {
-  const list: { id?: string; expect: any[]; ptr: string }[] = [];
-  if (doc.data.expect) list.push({ expect: doc.data.expect, ptr: "/expect" });
+  const list: { id?: string; expect: any[]; ptr: string; file?: string; lineOf: (p: string) => number | undefined }[] = [];
+  const inDoc = { lineOf: doc.lineOf };
+  if (doc.data.expect) list.push({ expect: doc.data.expect, ptr: "/expect", ...inDoc });
   const visit = (arr: any[] | undefined, ptr: string) =>
     (arr ?? []).forEach((b, i) => {
-      if (b.expect) list.push({ id: b.id, expect: b.expect, ptr: `${ptr}/${i}/expect` });
+      if (b.expect) list.push({ id: b.id, expect: b.expect, ptr: `${ptr}/${i}/expect`, ...inDoc });
       if (b.children) visit(b.children, `${ptr}/${i}/children`);
     });
   visit(doc.data.articles, "/articles");
   visit(doc.data.steps, "/steps");
   visit(doc.data.sections, "/sections");
+  // doctests/<文書名>.yaml（指摘はテストファイルの行を指す）
+  const t = doc.tests;
+  if (t) {
+    const inTest = { file: t.path, lineOf: t.lineOf };
+    if (t.data.expect) list.push({ expect: t.data.expect, ptr: "/expect", ...inTest });
+    for (const [id, e] of Object.entries(t.data.blocks ?? {})) list.push({ id, expect: e, ptr: `/blocks/${id}`, ...inTest });
+  }
   return list;
 }
 
@@ -102,7 +110,7 @@ function expectCheck(axis: "structure" | "expression") {
         for (const [i, e] of target.expect.entries()) {
           const [k, v] = Object.entries(e)[0] as [string, any];
           if (STRUCTURE.includes(k) !== (axis === "structure")) continue;
-          const where = { blockId: target.id, line: doc.lineOf(`${target.ptr}/${i}`) };
+          const where = { blockId: target.id, file: target.file, line: target.lineOf(`${target.ptr}/${i}`) };
           const fail = (id: string, vars: Record<string, unknown>) => out.push(ctx.fail(m(`check.expect.${id}`, { block: target.id ?? doc.name, ...vars }), where));
           if (k === "contains_fact" && !new RegExp(`\\{\\{\\s*(fact|capture):${v}\\s*\\}\\}`).test(raw)) fail("fact", { id: v });
           if (k === "contains_ref" && !new RegExp(`\\{\\{\\s*ref:${v}\\s*\\}\\}`).test(raw)) fail("ref", { id: v });
@@ -140,4 +148,21 @@ export const actionsPerSentence = defineCheck({
   },
 });
 
-export const expressionChecks = [sentenceLength, commas, styleMix, actionsPerSentence, expectCheck("structure"), expectCheck("expression")];
+/** doctests/<文書名>.yaml 自体の検査: 構文・スキーマ、存在しないブロック ID */
+export const testsValid = defineCheck({
+  id: "tests/valid",
+  axis: "structure",
+  scope: "document",
+  kinds: ["*"],
+  severity: "error",
+  run(doc, ctx) {
+    const t = doc.tests;
+    if (!t) return [];
+    const out = t.errors.map((e) => ctx.fail(e.message, { file: t.path, line: e.line }));
+    for (const id of Object.keys(t.data.blocks ?? {}))
+      if (!doc.defs[id]) out.push(ctx.fail(m("check.tests.unknown-block", { id }), { file: t.path, line: t.lineOf(`/blocks/${id}`) }));
+    return out;
+  },
+});
+
+export const expressionChecks = [testsValid, sentenceLength, commas, styleMix, actionsPerSentence, expectCheck("structure"), expectCheck("expression")];

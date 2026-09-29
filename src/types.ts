@@ -13,6 +13,8 @@ export type Status = "pass" | "fail" | "warn" | "unknown" | "skipped";
 
 export interface Loc {
   doc: string;
+  /** 指摘の行が文書以外のファイル（テストファイルなど）のとき、そのパス */
+  file?: string;
   blockId?: string;
   /** 文 ID（<blockId>#<n>） */
   sentence?: string;
@@ -60,6 +62,12 @@ export interface TextNode {
   block?: Record<string, unknown>;
   sentences: Sentence[];
 }
+export interface DocTests {
+  path: string;
+  data: { expect?: any[]; blocks?: Record<string, any[]>; flows?: any[] };
+  errors: { message: string; line?: number }[];
+  lineOf(ptr: string): number | undefined;
+}
 export type BuildErrorId = "schema/valid" | "ref/resolve" | "calc/eval";
 export interface Doc {
   name: string;
@@ -80,6 +88,8 @@ export interface Doc {
   /** 本文から参照した fact / capture の ID */
   factRefs: string[];
   buildErrors: { checkId: BuildErrorId; finding: Finding }[];
+  /** doctests/<文書名>.yaml（無ければ undefined） */
+  tests?: DocTests;
   lineOf(ptr: string): number | undefined;
   expand(text: string, block?: Record<string, unknown>): string;
 }

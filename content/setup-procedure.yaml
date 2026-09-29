@@ -50,14 +50,6 @@ steps:
     actions: [ログイン画面の「確認メールを再送」をクリックする。]
     expected: 「確認メールを再送しました」と表示される。
     next: verify
-flows:
-  - { name: 通常の流れ, expect_end: invite }
-  - name: 確認メールが一度届かなかった場合
-    choose: { verify: [10 分以上たっても確認メールが届かない, null] }
-    expect_end: invite
-  - name: すでに確認済みだった場合
-    choose: { verify: すでに確認済みの画面が出た }
-    expect_end: invite
 troubleshooting:
   - symptom: 確認メールが届かない
     step: verify

@@ -16,6 +16,7 @@ export const STARTER: [string, string][] = [
   ["company.yaml", "company.yaml"],
   ["runner.yaml", "runner.yaml"],
   ["starter/content", "content"],
+  ["starter/doctests", "doctests"],
 ];
 
 function files(p: string): string[] {

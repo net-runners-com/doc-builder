@@ -31,7 +31,8 @@ export function axisSummary(results: CheckResult[]): Record<Axis, { status: Stat
   ) as Record<Axis, { status: Status; findings: number }>;
 }
 
-export const where = (f: CheckResult["findings"][number]) => [f.loc.sentence ?? f.loc.blockId, f.loc.line ? `L${f.loc.line}` : ""].filter(Boolean).join(" ");
+export const where = (f: CheckResult["findings"][number]) =>
+  [f.loc.file ? f.loc.file.split("/").slice(-2).join("/") : "", f.loc.sentence ?? f.loc.blockId, f.loc.line ? `L${f.loc.line}` : ""].filter(Boolean).join(" ");
 
 export function formatText(report: Report): string {
   const lines: string[] = [];

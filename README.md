@@ -94,6 +94,7 @@ header:
 | パス | 中身 |
 |------|------|
 | `content/*.yaml` | 文書ソース（`kind: terms / procedure / proposal / guide`） |
+| `doctests/<文書名>.yaml` | その文書のテスト（`expect:` 文書全体、`blocks:` ブロック ID ごと、`flows:` 手順書のシナリオ） |
 | `facts.yaml` `facts/snapshots/` | 資料間で共有する事実と、実機検証の確認コマンド・承認済み出力 |
 | `themes/` `layouts/` `components/` `wordings/` | 見た目・配置・部品・表記スタイル |
 | `reviews/*.yaml` `reviews/_prompt.md` | レビュー観点と指示文 |

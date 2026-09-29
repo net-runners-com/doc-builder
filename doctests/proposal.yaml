@@ -1,0 +1,8 @@
+# content/proposal.yaml のテスト
+# R4: 次のステップに期限と連絡先がない（旧来は LLM レビューでしか拾えなかったもの）
+blocks:
+  next:
+    - contains: [期限]
+    - contains_fact: sales-contact
+  effect:
+    - contains_ref: effects

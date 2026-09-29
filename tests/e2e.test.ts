@@ -14,7 +14,7 @@ test.each([
   ["terms-of-service", ["glossary/avoid", "ref/resolve", "terms/notice-period"]], // T3 T2 T4
   ["setup-procedure", ["flow/scenario", "flow/state", "link/local"]], // P3, L1
   ["setup-procedure-p2", ["schema/valid"]], // P2
-  ["proposal", ["schedule/order"]], // R2
+  ["proposal", ["expect/expression", "expect/structure", "schedule/order"]], // R2, R4（doctests/proposal.yaml）
 ])("%s の不合格が正解どおり", (doc, expected) => {
   expect(fails(doc as string)).toEqual(expected as string[]);
 });

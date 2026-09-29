@@ -10,7 +10,7 @@ import { axisSummary, counts, worst } from "../runner/format";
 import type { ResolvedTheme } from "../theme/types";
 import type { Axis, CheckResult, Doc, Status } from "../types";
 
-export type Role = "source" | "theme" | "palette" | "layout" | "component" | "wording" | "company" | "facts" | "snapshot" | "image" | "template" | "config";
+export type Role = "source" | "theme" | "palette" | "layout" | "component" | "wording" | "company" | "facts" | "snapshot" | "image" | "template" | "config" | "test";
 
 export interface ManifestFile {
   /** プロジェクトルートからの相対パス（ツール本体のファイルは "tool:" で始まる） */
@@ -85,6 +85,7 @@ export function collectInputs(
     const p = a.stamp ? resolve(doc.dir, a.stamp) : undefined;
     if (p && existsSync(p)) list.push([p, "image"]);
   }
+  if (doc.tests) list.push([doc.tests.path, "test"]);
   if (existsSync(join(root, "runner.yaml"))) list.push([join(root, "runner.yaml"), "config"]);
   const seen = new Set<string>();
   return list.filter(([p]) => !seen.has(p) && seen.add(p)).map(([p, role]) => file(root, p, role));

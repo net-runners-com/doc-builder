@@ -5,6 +5,8 @@ import { parse } from "yaml";
 export interface Config {
   root: string;
   contentDir: string;
+  /** 文書のテスト（doctests/<文書名>.yaml）の置き場所 */
+  testsDir: string;
   defaultTheme: string;
   defaultLayout: string;
   defaultWording: string;

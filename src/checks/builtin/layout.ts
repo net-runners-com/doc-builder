@@ -1,6 +1,8 @@
 import { m } from "../../messages";
 import { existsSync, readFileSync } from "node:fs";
 import { loadYaml } from "../../parse/yaml";
+import { listTestFiles } from "../../parse/tests";
+import { discover, docName } from "../../runner/run";
 import { join, resolve } from "node:path";
 import { loadCompany } from "../../page/company";
 import { loadComponents, withDefaults } from "../../page/components";
@@ -139,5 +141,19 @@ export const reviewValid = defineProjectCheck({
       });
     }
     return out;
+  },
+});
+
+/** 対応する文書が無いテストファイル */
+export const testsOrphan = defineProjectCheck({
+  id: "tests/orphan",
+  axis: "structure",
+  scope: "corpus",
+  severity: "error",
+  run(ctx) {
+    const docs = new Set(discover(ctx.root, ctx.config).map(docName));
+    return listTestFiles(ctx.root, ctx.config)
+      .filter((d) => !docs.has(d))
+      .map((d) => ctx.fail(m("check.tests.orphan", { file: `${ctx.config.testsDir}/${d}.yaml`, doc: d }), { file: join(ctx.root, ctx.config.testsDir, `${d}.yaml`) }));
   },
 });

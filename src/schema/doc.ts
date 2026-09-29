@@ -19,6 +19,19 @@ const quote = {
 const tableBlock = { type: "object", required: ["table"], additionalProperties: false, properties: { table: id } };
 const body = { anyOf: [str, { type: "array", items: { anyOf: [str, quote, tableBlock] } }] };
 const posInt = { type: "integer", minimum: 1 };
+export const flowsSchema = {
+  type: "array",
+  items: {
+    type: "object",
+    required: ["name", "expect_end"],
+    additionalProperties: false,
+    properties: {
+      name: str,
+      choose: { type: "object", additionalProperties: { anyOf: [str, { type: "array", items: { type: ["string", "null"] } }] } },
+      expect_end: id,
+    },
+  },
+};
 export const expectSchema = {
   type: "array",
   items: {
@@ -187,19 +200,7 @@ const kinds: Record<Kind, { required: string[]; metaExtra: string[]; props: Reco
         },
       },
       initial_state: { type: "array", items: id },
-      flows: {
-        type: "array",
-        items: {
-          type: "object",
-          required: ["name", "expect_end"],
-          additionalProperties: false,
-          properties: {
-            name: str,
-            choose: { type: "object", additionalProperties: { anyOf: [str, { type: "array", items: { type: ["string", "null"] } }] } },
-            expect_end: id,
-          },
-        },
-      },
+      flows: flowsSchema,
       troubleshooting: {
         type: "array",
         items: {
@@ -276,4 +277,25 @@ export function validateDoc(data: unknown): SchemaError[] {
             : e.message ?? m("schema.invalid");
       return { ptr: e.instancePath, message: `${e.instancePath || "/"}: ${extra}` };
     });
+}
+
+/** doctests/<文書名>.yaml（文書のテスト） */
+const validateTests = ajv.compile({
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    doc: { type: "string" },
+    expect: expectSchema,
+    blocks: { type: "object", additionalProperties: expectSchema },
+    flows: flowsSchema,
+  },
+});
+
+export function validateTestFile(data: unknown): SchemaError[] {
+  if (data === null || data === undefined) return [];
+  if (validateTests(data)) return [];
+  return (validateTests.errors ?? []).map((e) => {
+    const extra = e.keyword === "additionalProperties" ? m("schema.unknown", { name: (e.params as any).additionalProperty }) : e.message ?? m("schema.invalid");
+    return { ptr: e.instancePath, message: `${e.instancePath || "/"}: ${extra}` };
+  });
 }

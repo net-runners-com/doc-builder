@@ -9,8 +9,8 @@ import { factRefs } from "./facts";
 import { flowChecks } from "./flow";
 import { expressionChecks } from "./expression";
 import { pageBreaks, pageGaps } from "./pagination";
-import { approvalComplete, layoutData, layoutValid, reviewValid, wordingValid } from "./layout";
+import { approvalComplete, layoutData, layoutValid, reviewValid, testsOrphan, wordingValid } from "./layout";
 import { themeContrast, themeValid } from "./theme";
 
 export const builtinChecks: Check[] = [...schemaChecks, ...textChecks, ...defChecks, ...kindChecks, figureRender, factRefs, layoutData, approvalComplete, ...flowChecks, ...expressionChecks, pageBreaks, pageGaps, ...onlineChecks];
-export const projectChecks: ProjectCheck[] = [themeValid, themeContrast, layoutValid, wordingValid, reviewValid];
+export const projectChecks: ProjectCheck[] = [themeValid, themeContrast, layoutValid, wordingValid, reviewValid, testsOrphan];

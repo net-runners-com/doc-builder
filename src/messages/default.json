@@ -207,5 +207,7 @@
   "check.flow.ts-unknown-branch": "トラブルシューティング「{symptom}」: {step} に分岐「{branch}」がありません",
   "check.flow.ts-branch-mismatch": "トラブルシューティング「{symptom}」は {goto} へ案内していますが、分岐「{branch}」の行き先は {flow} です",
   "check.flow.ts-text-mismatch": "トラブルシューティング「{symptom}」の対処文は {ref} を案内していますが、goto は {goto} です",
-  "check.flow.ts-no-goto": "トラブルシューティング「{symptom}」の対処文は {ref} を案内していますが、goto がありません"
+  "check.flow.ts-no-goto": "トラブルシューティング「{symptom}」の対処文は {ref} を案内していますが、goto がありません",
+  "check.tests.unknown-block": "テストが指定したブロック \"{id}\" は文書にありません",
+  "check.tests.orphan": "テストファイル {file} に対応する文書 \"{doc}\" がありません"
 }
