@@ -50,5 +50,6 @@
   "chart.value": "値",
   "label.branch": "{cond}場合は{target}へ",
   "label.goto": "次は{target}へ",
-  "label.end": "以上で完了です"
+  "label.end": "以上で完了です",
+  "label.otherwise": "それ以外は{target}へ"
 }

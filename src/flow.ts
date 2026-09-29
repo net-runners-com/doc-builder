@@ -132,24 +132,41 @@ export function unmetRequires(steps: Step[], g: Graph, initial: string[] = []): 
     .filter((x) => x.missing.length);
 }
 
-/** シナリオ: choose で分岐を固定してたどり、行き着いた終端を返す */
-export function simulate(steps: Step[], g: Graph, choose: Record<string, string> = {}): { end?: string; error?: "bad-choice" | "loop"; at?: string; path: string[] } {
+/**
+ * シナリオ: choose で分岐を決めてたどり、到達した終端と、経路上で満たされなかった前提を返す。
+ * choose の値が文字列なら最初の訪問だけ、配列なら訪問ごとに順に使う（null・尽きたら既定の次へ）。
+ */
+export function simulate(
+  steps: Step[],
+  g: Graph,
+  choose: Record<string, string | (string | null)[]> = {},
+  initial: string[] = [],
+): { end?: string; error?: "bad-choice" | "loop"; at?: string; choice?: string; path: string[]; unmet: { step: string; missing: string[] }[] } {
   const byId = new Map(steps.map((s) => [s.id, s]));
   const path: string[] = [];
-  let cur: string | undefined = g.ids[0];
+  const unmet: { step: string; missing: string[] }[] = [];
+  const state = new Set(initial);
+  const visits = new Map<string, number>();
   const limit = g.ids.length * 4 + 4;
+  let cur: string | undefined = g.ids[0];
   while (cur) {
     path.push(cur);
-    if (path.length > limit) return { error: "loop", at: cur, path };
-    if (g.terminals.has(cur) && !(cur in choose)) return { end: cur, path };
+    if (path.length > limit) return { error: "loop", at: cur, path, unmet };
     const s: Step = byId.get(cur)!;
-    if (cur in choose) {
-      const want: string = choose[cur];
-      const b = (s.branches ?? []).find((x: { if: string; goto: string }) => x.if === want);
-      if (!b) return { error: "bad-choice", at: cur, path };
+    const missing = (s.requires ?? []).filter((r) => !state.has(r));
+    if (missing.length) unmet.push({ step: cur, missing });
+    for (const p of s.produces ?? []) state.add(p);
+    const n: number = visits.get(cur) ?? 0;
+    visits.set(cur, n + 1);
+    const c: string | (string | null)[] | undefined = choose[cur];
+    const pick: string | null | undefined = Array.isArray(c) ? c[n] : n === 0 ? c : undefined;
+    if (pick) {
+      const b: { if: string; goto: string } | undefined = (s.branches ?? []).find((x) => x.if === pick);
+      if (!b) return { error: "bad-choice", at: cur, choice: pick, path, unmet };
       cur = b.goto;
-    } else cur = (g.edges.get(cur) ?? []).find((e) => !e.cond)?.to;
-    if (cur && !byId.has(cur)) return { error: "bad-choice", at: cur, path };
+    } else if (g.terminals.has(cur)) return { end: cur, path, unmet };
+    else cur = (g.edges.get(cur) ?? []).find((e) => !e.cond)?.to;
+    if (cur && !byId.has(cur)) return { error: "bad-choice", at: cur, path, unmet };
   }
-  return { end: path[path.length - 1], path };
+  return { end: path[path.length - 1], path, unmet };
 }

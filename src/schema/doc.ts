@@ -193,7 +193,11 @@ const kinds: Record<Kind, { required: string[]; metaExtra: string[]; props: Reco
           type: "object",
           required: ["name", "expect_end"],
           additionalProperties: false,
-          properties: { name: str, choose: { type: "object", additionalProperties: str }, expect_end: id },
+          properties: {
+            name: str,
+            choose: { type: "object", additionalProperties: { anyOf: [str, { type: "array", items: { type: ["string", "null"] } }] } },
+            expect_end: id,
+          },
         },
       },
       troubleshooting: {

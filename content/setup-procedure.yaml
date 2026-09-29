@@ -1,5 +1,6 @@
 # 欠陥: P3 リンク切れ（templates/members.csv）
-#       L1 分岐「確認メールが届かない」で verify を飛ばすと、invite の前提 email-verified が満たされない（flow/state）
+#       L1 手順2の分岐「すでに確認済みの画面が出た」で手順4へ飛ぶと、プラン選択（手順3）を飛ばしてしまい、
+#          手順4 の前提 plan-selected が満たされない（flow/state、flow/scenario）
 # P1（欠番）は自動採番のため発生しない。P2 は setup-procedure-p2.yaml
 kind: procedure
 meta:
@@ -21,14 +22,16 @@ steps:
     produces: [account]
     actions: [https://app.example.com/signup を開く。, 「組織として登録」を選択する。, 組織名・メールアドレス・パスワードを入力し「登録」をクリックする。]
     expected: 入力したメールアドレスに確認メールが届く。
-    branches:
-      - { if: 確認メールが届かない, goto: plan }
   - id: verify
     title: メールアドレスを確認する
+    loop: true
     requires: [account]
     produces: [email-verified]
     actions: [確認メール内の「メールアドレスを確認」をクリックする。]
     expected: 管理画面のダッシュボードが表示される。
+    branches:
+      - { if: 10 分以上たっても確認メールが届かない, goto: resend }
+      - { if: すでに確認済みの画面が出た, goto: invite }
   - id: plan
     title: プランを選択する
     requires: [account]
@@ -41,12 +44,23 @@ steps:
     actions: [「設定」→「メンバー」を開く。, 「CSV で一括招待」から CSV をアップロードし「招待を送信」をクリックする。]
     expected: 招待したメンバーの状態が「招待中」と表示される。
     end: true
+  - id: resend
+    title: 確認メールを再送する
+    requires: [account]
+    actions: [ログイン画面の「確認メールを再送」をクリックする。]
+    expected: 「確認メールを再送しました」と表示される。
+    next: verify
 flows:
   - { name: 通常の流れ, expect_end: invite }
-  - { name: 確認メールが届かない場合, choose: { signup: 確認メールが届かない }, expect_end: invite }
+  - name: 確認メールが一度届かなかった場合
+    choose: { verify: [10 分以上たっても確認メールが届かない, null] }
+    expect_end: invite
+  - name: すでに確認済みだった場合
+    choose: { verify: すでに確認済みの画面が出た }
+    expect_end: invite
 troubleshooting:
   - symptom: 確認メールが届かない
-    action: 迷惑メールフォルダを確認する。10 分以上届かない場合は{{ref:signup}}からやり直す。
+    action: 迷惑メールフォルダを確認する。10 分以上届かない場合は{{ref:resend}}で再送する。
   - symptom: CSV のアップロードに失敗する
     action: 文字コードが UTF-8 か確認する。列の形式は[CSV テンプレート](./templates/members.csv)を参照する。
 figures:

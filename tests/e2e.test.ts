@@ -12,7 +12,7 @@ const fails = (doc: string) => report.results.filter((r) => r.doc === doc && r.a
 test.each([
   ["service-guide", ["glossary/avoid", "link/local", "text/placeholder"]], // S1 S2 S3
   ["terms-of-service", ["glossary/avoid", "ref/resolve", "terms/notice-period"]], // T3 T2 T4
-  ["setup-procedure", ["flow/state", "link/local"]], // P3, L1
+  ["setup-procedure", ["flow/scenario", "flow/state", "link/local"]], // P3, L1
   ["setup-procedure-p2", ["schema/valid"]], // P2
   ["proposal", ["schedule/order"]], // R2
 ])("%s の不合格が正解どおり", (doc, expected) => {
@@ -30,7 +30,7 @@ test("T1/P1/R1 は構造上発生しない", () => {
     Array.from({ length: 7 }, (_, i) => `第${i + 1}条`),
   );
   const proc = loadDoc(root, config, join(root, "content/setup-procedure.yaml")).doc;
-  expect(Object.values(proc.defs).filter((d) => d.type === "step").map((d) => d.label)).toEqual(["手順1", "手順2", "手順3", "手順4"]);
+  expect(Object.values(proc.defs).filter((d) => d.type === "step").map((d) => d.label)).toEqual(["手順1", "手順2", "手順3", "手順4", "手順5"]);
   const { doc } = loadDoc(root, config, join(root, "content/proposal.yaml"));
   const costs = buildContent(doc, {}).nodes.find((n) => n.t === "table" && n.columns[0] === "項目" && n.columns[3] === "金額") as any;
   expect(costs.rows.at(-1)).toEqual(["合計", "", "", "24,000円"]);

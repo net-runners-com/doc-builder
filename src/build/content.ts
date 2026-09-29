@@ -136,7 +136,10 @@ export function buildContent(doc: Doc, assets: Assets, snapshot: (id: string) =>
         nodes.push({ t: "kv", key: "label.expected", label: t(s, "label.expected"), text: x(st.expected, st) });
         const lbl = (id: string) => doc.defs[id]?.label ?? id;
         for (const b of st.branches ?? []) nodes.push({ t: "p", text: t(s, "label.branch", { cond: x(b.if), target: lbl(b.goto) }) });
-        if (st.next) nodes.push({ t: "p", text: t(s, "label.goto", { target: lbl(st.next) }) });
+        const i = d.steps.indexOf(st);
+        const def = st.end ? undefined : st.next ?? d.steps[i + 1]?.id;
+        // 分岐がある手順は「それ以外」の行き先も明示する。next で飛ぶときも書く
+        if (def && (st.branches?.length || st.next)) nodes.push({ t: "p", text: t(s, st.branches?.length ? "label.otherwise" : "label.goto", { target: lbl(def) }) });
         if (st.end) nodes.push({ t: "p", text: t(s, "label.end") });
         });
       if (d.troubleshooting?.length) {

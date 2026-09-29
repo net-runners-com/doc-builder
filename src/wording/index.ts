@@ -24,6 +24,7 @@ export const VARS: Record<string, string[]> = {
   "unit.yen": ["n"],
   "label.branch": ["cond", "target"],
   "label.goto": ["target"],
+  "label.otherwise": ["target"],
 };
 /** 必須の変数（書式が意味をなさなくなるもの） */
 export const REQUIRED_VARS: Record<string, string[]> = {

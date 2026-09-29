@@ -196,5 +196,11 @@
   "check.pagination.orphan-heading": "見出し「{id}」がページ {page} の末尾に取り残されています",
   "check.pagination.gap": "{kind}「{id}」を次のページに送ったため、ページ {page} の下部に {ratio}% の余白があります",
   "palette.not-found": "パレット \"{id}\" が見つかりません（{path}）",
-  "theme.palette": "パレット: {error}"
+  "theme.palette": "パレット: {error}",
+  "check.flow.scenario-unmet": "フロー「{flow}」: {step} の前提 {states} を満たさないまま進みます: {path}",
+  "check.flow.orphan-requires": "{step} の前提 {state} を作る手順がありません（produces にも initial_state にも無い）",
+  "check.flow.undeclared-skip": "{step} の分岐「{cond}」で {skipped} を飛ばしますが、{skipped} に produces が無いため飛ばしてよいか検証できません",
+  "check.flow.no-scenarios": "分岐が {n} 個ありますが、シナリオ（flows）がありません",
+  "check.flow.uncovered-branch": "{step} の分岐「{cond}」はどのシナリオでも通りません",
+  "check.flow.uncovered-end": "終わりの手順 {step} に着くシナリオがありません"
 }
