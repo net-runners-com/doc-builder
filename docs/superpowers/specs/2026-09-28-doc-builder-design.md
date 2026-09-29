@@ -645,3 +645,12 @@ Vite の manifest と同様に、出力ファイル（dist からの相対パス
 - `tests/valid`（文書ごと）: 構文・スキーマ・存在しないブロック ID。壊れていても文書のチェックは止めない。`tests/orphan`（@themes）: 対応する文書の無いテストファイル。
 - manifest の入力に role `test`。init で `doctests/example.yaml` を作る。
 - サンプル: `doctests/setup-procedure.yaml`（フロー 3 本）、`doctests/proposal.yaml`（R4 を expect で検出。旧来は LLM）。
+
+---
+
+## 追補 I: テストの穴埋め（2026-09-29）
+
+- **ブロック単位のカバレッジ** `tests/coverage`（structure / document / warn）: テスト対象は条・手順・節。テスト済みとみなすのは、本文の expect:、doctests の blocks:、（手順書）いずれかのシナリオが通った手順。結果の note に「テスト n/m ブロック（p%）」。`runner.yaml` の `minCoverage`（既定 0）を下回ると未テストのブロックを列挙して警告。CLI の文書行・UI の文書ノード・manifest の tests.coverage に表示。
+- **意味に近い条件を構造で**: expect に `contains_number` `contains_date`（正規表現は `runner.yaml` の `expectPatterns`）、`matches`（正規表現）、`has_table` `has_figure`（構造の観点）、`min_sentences` を追加。数値・日付・正規表現は埋め込みを展開した後の本文で判定する。
+- **構造で書けない問い** `ask:` は `review/ask/<block>/<n>` として LLM レビュー（warn、--review のみ、scope item）に回す。
+- サンプル: `doctests/terms-of-service.yaml`（T5 を ask で）、`doctests/service-guide.yaml`。

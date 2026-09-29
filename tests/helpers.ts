@@ -43,7 +43,10 @@ export function ctxFor(doc: Doc, over: Partial<CheckCtx> = {}): CheckCtx {
   };
 }
 
-export const runCheck = async (c: Check, d: Doc, over: Partial<CheckCtx> = {}) => c.run(d, ctxFor(d, over));
+export const runCheck = async (c: Check, d: Doc, over: Partial<CheckCtx> = {}) => {
+  const out = await c.run(d, ctxFor(d, over));
+  return Array.isArray(out) ? out : out.findings;
+};
 export const messages = async (c: Check, d: Doc, over: Partial<CheckCtx> = {}) =>
   (await runCheck(c, d, over)).map((f) => f.message);
 

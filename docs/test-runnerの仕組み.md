@@ -125,7 +125,8 @@ defineCheck({
 | approval/complete | 版 1.0 以上の承認欄の空欄、印影の画像 |
 | flow/refs | フローの行き先・シナリオの手順が存在するか |
 | tests/valid, tests/orphan | テストファイルの構文・スキーマ・存在しないブロック ID、文書の無いテストファイル |
-| expect/structure | 項目ごとの期待値（fact・参照を含むか） |
+| expect/structure | 項目ごとの期待値（fact・参照・表・図を含むか） |
+| tests/coverage | テストのあるブロック数／全ブロック数（`runner.yaml` の `minCoverage` を下回ると警告） |
 | @themes 側 | theme/valid、layout/valid、wording/valid、review/valid |
 
 ### 表層（surface）
@@ -177,7 +178,7 @@ defineCheck({
 | expression/commas | 一文の読点の数 |
 | expression/style | です・ます調とだ・である調の混在（文末の形態素で判定） |
 | expression/actions | 手順の一文に動作（自立動詞）がいくつあるか |
-| expect/expression | 項目ごとの期待値（語を含む・含まない、文の数、文の長さ、動作の数） |
+| expect/expression | 項目ごとの期待値（語を含む・含まない、数値・日付を含む、正規表現、文の数の上限・下限、文の長さ、動作の数） |
 | theme/contrast（@themes） | パレットの文字色と背景色のコントラスト比 |
 
 ### 体裁（layout、`--render`）
@@ -193,7 +194,7 @@ defineCheck({
 
 ### レビュー（review、`--review`）
 
-`reviews/*.yaml` の観点ごとに `claude -p` を読み取り専用の設定で 1 回呼ぶ。事実の部分は `［事実:ID］` に伏せて渡し、結果は常に警告。観点には「ルールにできない理由」（`why_not_rule`）が必須。
+`reviews/*.yaml` の観点と、テストの `ask:`（構造で書けない問い。ブロック単位）ごとに `claude -p` を読み取り専用の設定で 1 回呼ぶ。事実の部分は `［事実:ID］` に伏せて渡し、結果は常に警告。観点には「ルールにできない理由」（`why_not_rule`）が必須。
 
 ## 3. 結果の見せ方
 

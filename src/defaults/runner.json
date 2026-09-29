@@ -54,5 +54,10 @@
       "style": "desumasu"
     }
   },
-  "testsDir": "doctests"
+  "testsDir": "doctests",
+  "expectPatterns": {
+    "number": "[0-9０-９]",
+    "date": "\\d{4}[-/年]\\d{1,2}(?:[-/月]\\d{1,2}日?)?|\\d{1,2}月\\d{1,2}日"
+  },
+  "minCoverage": 0
 }

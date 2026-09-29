@@ -1,3 +1,4 @@
+import { expectTargets } from "../checks/builtin/expression";
 import { m } from "../messages";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -56,13 +57,29 @@ async function figurePngs(doc: Doc, ctx: CheckCtx): Promise<string[]> {
   });
 }
 
+/** expect の ask:（構造で書けない問い）をブロックごとの観点にする */
+function askAspects(doc: Doc): (Aspect & { scope: "item" | "document" })[] {
+  return expectTargets(doc).flatMap((t) =>
+    t.expect
+      .map((e: any, i: number) => ({ e, i }))
+      .filter(({ e }: any) => typeof e.ask === "string")
+      .map(({ e, i }: any) => ({
+        id: `ask/${t.id ?? "doc"}/${i + 1}`,
+        ask: m("check.review.ask", { block: t.id ? (doc.defs[t.id]?.label ?? t.id) : doc.name, ask: e.ask }),
+        why_not_rule: m("review.ask-why"),
+        scope: (t.id ? "item" : "document") as "item" | "document",
+      })),
+  );
+}
+
 export function reviewChecks(root: string, doc: Doc): Check[] {
   if (!doc.kind) return [];
-  return loadAspects(root, doc.kind).map((a) =>
+  const aspects = [...loadAspects(root, doc.kind).map((a) => ({ ...a, scope: "document" as const })), ...askAspects(doc)];
+  return aspects.map((a) =>
     defineCheck({
       id: `review/${a.id}`,
       axis: "review",
-      scope: "document",
+      scope: a.scope,
       trigger: "review",
       kinds: ["*"],
       severity: "warn",

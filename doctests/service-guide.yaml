@@ -1,0 +1,8 @@
+# content/service-guide.yaml のテスト
+blocks:
+  features:
+    - has_table: true
+  pricing:
+    - has_table: true
+  support:
+    - matches: "\\d{1,2}:\\d{2}"

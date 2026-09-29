@@ -41,7 +41,8 @@ export function formatText(report: Report): string {
     const rs = report.results.filter((r) => r.doc === doc);
     const sum = axisSummary(rs);
     const brief = AXES.filter((a) => rs.some((r) => r.axis === a)).map((a) => `${m(`axis.${a}`)} ${ICON[sum[a].status]}${sum[a].findings || ""}`).join("  ");
-    lines.push(`${ICON[worst(rs.map((r) => r.status))]} ${doc}    ${brief}`);
+    const cov = rs.find((r) => r.checkId === "tests/coverage" && r.status !== "skipped")?.note;
+    lines.push(`${ICON[worst(rs.map((r) => r.status))]} ${doc}    ${brief}${cov ? `    ${cov}` : ""}`);
     for (const a of AXES) {
       const gs = rs.filter((r) => r.axis === a);
       if (!gs.length) continue;

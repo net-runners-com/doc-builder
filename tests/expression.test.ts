@@ -48,3 +48,31 @@ test("expect: 項目ごとの判定条件", async () => {
   expect(await messages(expectStructure, d)).toEqual(['next: fact "contact" を参照していません']);
   expect(await messages(expectExpression, d)).toEqual(["next: 「期限」がありません", "next: 「など」を含んでいます", "next: 文が 2 個あります（上限 1）"]);
 });
+
+test("expect: 構造に落とした意味の条件", async () => {
+  const d = docOf(`kind: proposal\n${meta("  client: C\n")}sections:
+  - id: effect
+    title: 効果
+    body:
+      - 検索時間を大幅に短縮します。
+    expect:
+      - contains_number: true
+      - has_table: true
+      - has_figure: true
+      - min_sentences: 2
+      - matches: "\\\\d+%"
+  - id: plan
+    title: 日程
+    body: "2026年10月5日に契約します。{{calc:1+1}}名で運用します。"
+    expect:
+      - contains_date: true
+      - contains_number: true
+      - ask: 日程は妥当か
+`);
+  expect(await messages(expectStructure, d)).toEqual(["effect: 表がありません", "effect: 図・画像がありません"]);
+  expect(await messages(expectExpression, d)).toEqual([
+    "effect: 数値がありません",
+    "effect: 文が 1 個しかありません（下限 2）",
+    "effect: /\\d+%/ に一致する記述がありません",
+  ]);
+});

@@ -31,7 +31,8 @@ const doc = (path: string, quote: string) =>
   );
 const run = async (c: Check, d: ReturnType<typeof doc>, online: boolean) => {
   try {
-    const f = await c.run(d, ctxFor(d, { workDir, options: { online } }));
+    const o = await c.run(d, ctxFor(d, { workDir, options: { online } }));
+    const f = Array.isArray(o) ? o : o.findings;
     return f.length ? `fail: ${f[0].message}` : "pass";
   } catch (e) {
     return `${(e as Error).constructor.name}: ${(e as Error).message}`;

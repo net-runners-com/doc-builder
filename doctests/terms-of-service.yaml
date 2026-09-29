@@ -1,0 +1,13 @@
+# content/terms-of-service.yaml のテスト
+blocks:
+  definitions:
+    - contains: [利用者, コンテンツ]
+  fees:
+    - contains_ref: refund
+  change:
+    - contains_number: true
+  suspension:
+    # T5: 構造では書けない問いは ask（--review で LLM が判定、警告のみ）
+    - ask: 保守点検による停止について、利用者への事前通知の定めがあるか
+  law:
+    - contains: [準拠, 管轄]

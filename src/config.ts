@@ -7,6 +7,10 @@ export interface Config {
   contentDir: string;
   /** 文書のテスト（doctests/<文書名>.yaml）の置き場所 */
   testsDir: string;
+  /** expect の contains_number / contains_date の正規表現 */
+  expectPatterns: { number: string; date: string };
+  /** tests/coverage の最低ライン（0〜100%）。下回ると警告 */
+  minCoverage: number;
   defaultTheme: string;
   defaultLayout: string;
   defaultWording: string;

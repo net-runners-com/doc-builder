@@ -47,6 +47,14 @@ export const expectSchema = {
       max_sentence_length: posInt,
       max_sentences: posInt,
       max_actions_per_sentence: posInt,
+      min_sentences: posInt,
+      contains_number: { const: true },
+      contains_date: { const: true },
+      matches: str,
+      has_table: { const: true },
+      has_figure: { const: true },
+      /** 構造で書けない問い。LLM レビュー（警告・--review）に回す */
+      ask: str,
     },
   },
 };

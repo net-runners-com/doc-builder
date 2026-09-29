@@ -2,6 +2,7 @@ import { m } from "../../messages";
 import { countActions, morph, sentenceStyle } from "../../morph";
 import { TOKEN } from "../../parse/doc";
 import type { Doc, Finding, Kind, TextNode } from "../../types";
+import { buildGraph, simulate } from "../../flow";
 import { defineCheck, type CheckCtx } from "../define";
 
 /** 判定対象の文: 本文の文（見出し #title を除く）。埋め込みは同じ長さの記号に置換して数える */
@@ -69,8 +70,30 @@ export const styleMix = defineCheck({
   },
 });
 
+/** ID のブロック（条・手順・節）を探す */
+export function findBlock(doc: Doc, id: string): any {
+  const visit = (arr: any[] | undefined): any => {
+    for (const b of arr ?? []) {
+      if (b.id === id) return b;
+      const c = visit(b.children);
+      if (c) return c;
+    }
+  };
+  return visit(doc.data.articles) ?? visit(doc.data.steps) ?? visit(doc.data.sections);
+}
+
+/** テスト対象のブロック（条・手順・節）の ID */
+export function testableBlocks(doc: Doc): string[] {
+  const out: string[] = [];
+  const visit = (arr: any[] | undefined) => (arr ?? []).forEach((b) => (out.push(b.id), visit(b.children)));
+  visit(doc.data.articles);
+  visit(doc.data.steps);
+  visit(doc.data.sections);
+  return out;
+}
+
 /** 条・手順・節・文書の expect: を評価する */
-function expectTargets(doc: Doc) {
+export function expectTargets(doc: Doc) {
   const list: { id?: string; expect: any[]; ptr: string; file?: string; lineOf: (p: string) => number | undefined }[] = [];
   const inDoc = { lineOf: doc.lineOf };
   if (doc.data.expect) list.push({ expect: doc.data.expect, ptr: "/expect", ...inDoc });
@@ -92,7 +115,9 @@ function expectTargets(doc: Doc) {
   return list;
 }
 
-const STRUCTURE = ["contains_fact", "contains_ref"];
+const STRUCTURE = ["contains_fact", "contains_ref", "has_table", "has_figure"];
+/** review に回す条件（ここでは判定しない） */
+const DELEGATED = ["ask"];
 
 function expectCheck(axis: "structure" | "expression") {
   return defineCheck({
@@ -106,10 +131,12 @@ function expectCheck(axis: "structure" | "expression") {
       for (const target of expectTargets(doc)) {
         const inBlock = (t: TextNode) => (target.id ? t.blockId === target.id : true) && prose(t);
         const raw = doc.texts.filter(inBlock).map((t) => t.raw).join("\n");
+        const expanded = doc.texts.filter(inBlock).map((t) => doc.expand(t.raw, t.block)).join("\n");
+        const blockData = target.id ? JSON.stringify(findBlock(doc, target.id) ?? {}) : JSON.stringify(doc.data);
         const ss = sentences(doc, inBlock);
         for (const [i, e] of target.expect.entries()) {
           const [k, v] = Object.entries(e)[0] as [string, any];
-          if (STRUCTURE.includes(k) !== (axis === "structure")) continue;
+          if (DELEGATED.includes(k) || STRUCTURE.includes(k) !== (axis === "structure")) continue;
           const where = { blockId: target.id, file: target.file, line: target.lineOf(`${target.ptr}/${i}`) };
           const fail = (id: string, vars: Record<string, unknown>) => out.push(ctx.fail(m(`check.expect.${id}`, { block: target.id ?? doc.name, ...vars }), where));
           if (k === "contains_fact" && !new RegExp(`\\{\\{\\s*(fact|capture):${v}\\s*\\}\\}`).test(raw)) fail("fact", { id: v });
@@ -118,6 +145,12 @@ function expectCheck(axis: "structure" | "expression") {
           if (k === "not_contains") for (const w of v as string[]) if (raw.includes(w)) fail("not-contains", { word: w });
           if (k === "max_sentences" && ss.length > v) fail("sentences", { n: ss.length, max: v });
           if (k === "max_sentence_length") for (const x of ss) if ([...x.text].length > v) fail("length", { sentence: x.s.id, n: [...x.text].length, max: v });
+          if (k === "min_sentences" && ss.length < v) fail("min-sentences", { n: ss.length, min: v });
+          if (k === "contains_number" && !new RegExp(ctx.config.expectPatterns.number).test(expanded)) fail("number", {});
+          if (k === "contains_date" && !new RegExp(ctx.config.expectPatterns.date).test(expanded)) fail("date", {});
+          if (k === "matches" && !new RegExp(v).test(expanded)) fail("matches", { re: v });
+          if (k === "has_table" && !/"table":/.test(blockData)) fail("table", {});
+          if (k === "has_figure" && !/\{\{\s*(fig|img):/.test(raw)) fail("figure", {});
           if (k === "max_actions_per_sentence")
             for (const x of ss) {
               const n = countActions(await morph(x.text));
@@ -165,4 +198,34 @@ export const testsValid = defineCheck({
   },
 });
 
-export const expressionChecks = [testsValid, sentenceLength, commas, styleMix, actionsPerSentence, expectCheck("structure"), expectCheck("expression")];
+/**
+ * ブロック単位のテストカバレッジ。テストがあるとみなすのは:
+ * 本文の expect:、doctests の blocks:、（手順書）シナリオがその手順を通る
+ */
+export const testsCoverage = defineCheck({
+  id: "tests/coverage",
+  axis: "structure",
+  scope: "document",
+  kinds: ["*"],
+  severity: "warn",
+  run(doc, ctx) {
+    const all = testableBlocks(doc);
+    if (!all.length) return [];
+    const tested = new Set<string>();
+    for (const t of expectTargets(doc)) if (t.id) tested.add(t.id);
+    if (doc.kind === "procedure") {
+      const ss = doc.data.steps ?? [];
+      const g = buildGraph(ss);
+      const flows = [...(doc.data.flows ?? []), ...(doc.tests?.data.flows ?? [])];
+      for (const f of flows) for (const id of simulate(ss, g, f.choose ?? {}, doc.data.initial_state ?? []).path) tested.add(id);
+    }
+    const n = all.filter((id) => tested.has(id)).length;
+    const pct = Math.round((n / all.length) * 100);
+    const note = m("check.tests.coverage", { n, total: all.length, pct });
+    const untested = all.filter((id) => !tested.has(id));
+    const findings = pct < ctx.config.minCoverage ? [ctx.fail(m("check.tests.coverage-low", { pct, min: ctx.config.minCoverage, blocks: untested.join(", ") }))] : [];
+    return { findings, note };
+  },
+});
+
+export const expressionChecks = [testsValid, testsCoverage, sentenceLength, commas, styleMix, actionsPerSentence, expectCheck("structure"), expectCheck("expression")];

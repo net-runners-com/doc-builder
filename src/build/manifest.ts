@@ -22,6 +22,8 @@ export interface ManifestTests {
   status: Status;
   counts: Record<Status, number>;
   axes: Partial<Record<Axis, { status: Status; findings: number }>>;
+  /** テストのカバレッジ（tests/coverage の要約） */
+  coverage?: string;
   /** fail / warn / unknown のチェック（checkId → 指摘数） */
   problems: { checkId: string; axis: Axis; status: Status; findings: number }[];
 }
@@ -95,6 +97,7 @@ export function summarizeTests(results: CheckResult[]): ManifestTests {
   const axes = axisSummary(results);
   return {
     status: worst(results.map((r) => r.status)),
+    coverage: results.find((r) => r.checkId === "tests/coverage" && r.status !== "skipped")?.note,
     counts: counts(results),
     axes: Object.fromEntries(Object.entries(axes).filter(([a]) => results.some((r) => r.axis === a))) as ManifestTests["axes"],
     problems: results

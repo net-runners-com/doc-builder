@@ -48,3 +48,34 @@ test("tests/valid: 存在しないブロック・スキーマ違反。tests/orph
   // テストファイルが壊れていても、文書のチェックは止めない
   expect(get(r, "g", "schema/valid").status).toBe("pass");
 });
+
+test("tests/coverage: expect・blocks・シナリオが通った手順をテスト済みとみなす", async () => {
+  writeFileSync(join(root, "doctests", "g.yaml"), "blocks:\n  intro:\n    - contains: [本文]\n");
+  let r = await runAll(root);
+  expect(get(r, "g", "tests/coverage").note).toBe("テスト 1/1 ブロック（100%）");
+  // 手順書: シナリオが a → c を通るので b だけが未テスト
+  expect(get(r, "proc", "tests/coverage").note).toBe("テスト 2/3 ブロック（67%）");
+  writeFileSync(join(root, "runner.yaml"), "minCoverage: 80\n");
+  r = await runAll(root);
+  const c = get(r, "proc", "tests/coverage");
+  expect(c.status).toBe("warn");
+  expect(c.findings[0].message).toBe("テストのあるブロックが 67% です（最低 80%）。テストの無いブロック: b");
+  rmSync(join(root, "runner.yaml"));
+});
+
+test("ask: は LLM レビューの観点になる（--review のときだけ、警告）", async () => {
+  writeFileSync(join(root, "doctests", "g.yaml"), "blocks:\n  intro:\n    - ask: 読み手に伝わるか\n");
+  let prompt = "";
+  const r = await runAll(root, {
+    review: true,
+    claude: async (a) => {
+      prompt = a.prompt;
+      return JSON.stringify({ structured_output: { verdict: "fail", findings: [{ blockId: "intro", reason: "伝わらない" }] } });
+    },
+  });
+  const ask = get(r, "g", "review/ask/intro/1");
+  expect(ask.status).toBe("warn");
+  expect(ask.scope).toBe("item");
+  expect(prompt).toContain("ブロック「1. 概要」について: 読み手に伝わるか");
+  expect(get(await runAll(root), "g", "review/ask/intro/1").status).toBe("skipped");
+});

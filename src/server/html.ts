@@ -63,7 +63,7 @@ export function treePage(root: string, report: Report, f: Focus, files: Record<s
   let tree = `<ul><li><details open><summary${sel(!f.doc)}>${icon(all)} <a href="/">docs</a> <span class="n">✗${c.fail} !${c.warn} ?${c.unknown} –${c.skipped} ✓${c.pass}</span></summary><ul>`;
   for (const [doc, rs] of byDoc) {
     const openDoc = !f.doc || f.doc === doc || rs.some((r) => r.status === "fail");
-    tree += `<li><details${openDoc ? " open" : ""}><summary${sel(f.doc === doc && !f.axis)}>${icon(worst(rs.map((r) => r.status)))} <a href="/t/${enc(doc)}">${h(doc)}</a></summary><ul>`;
+    tree += `<li><details${openDoc ? " open" : ""}><summary${sel(f.doc === doc && !f.axis)}>${icon(worst(rs.map((r) => r.status)))} <a href="/t/${enc(doc)}">${h(doc)}</a>${(() => { const c = rs.find((r) => r.checkId === "tests/coverage" && r.status !== "skipped")?.note; return c ? ` <span class="n">${h(c)}</span>` : ""; })()}</summary><ul>`;
     for (const g of AXES) {
       const gs = rs.filter((r) => r.axis === g);
       if (!gs.length) continue;

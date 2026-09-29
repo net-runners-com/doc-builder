@@ -46,7 +46,7 @@ export interface Check {
   trigger?: Trigger;
   kinds: (Kind | "*")[];
   severity: "error" | "warn";
-  run(doc: Doc, ctx: CheckCtx): Finding[] | Promise<Finding[]>;
+  run(doc: Doc, ctx: CheckCtx): CheckOutput | Promise<CheckOutput>;
 }
 
 export type CheckOutput = Finding[] | { findings: Finding[]; note?: string };
