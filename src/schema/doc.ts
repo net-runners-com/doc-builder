@@ -202,7 +202,12 @@ const kinds: Record<Kind, { required: string[]; metaExtra: string[]; props: Reco
       },
       troubleshooting: {
         type: "array",
-        items: { type: "object", required: ["symptom", "action"], additionalProperties: false, properties: { symptom: str, action: str } },
+        items: {
+          type: "object",
+          required: ["symptom", "action"],
+          additionalProperties: false,
+          properties: { symptom: str, action: str, step: id, branch: str, goto: id },
+        },
       },
     },
   },

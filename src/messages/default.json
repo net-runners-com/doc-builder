@@ -202,5 +202,10 @@
   "check.flow.undeclared-skip": "{step} の分岐「{cond}」で {skipped} を飛ばしますが、{skipped} に produces が無いため飛ばしてよいか検証できません",
   "check.flow.no-scenarios": "分岐が {n} 個ありますが、シナリオ（flows）がありません",
   "check.flow.uncovered-branch": "{step} の分岐「{cond}」はどのシナリオでも通りません",
-  "check.flow.uncovered-end": "終わりの手順 {step} に着くシナリオがありません"
+  "check.flow.uncovered-end": "終わりの手順 {step} に着くシナリオがありません",
+  "check.flow.ts-unknown-step": "トラブルシューティング「{symptom}」: 手順 \"{id}\" がありません",
+  "check.flow.ts-unknown-branch": "トラブルシューティング「{symptom}」: {step} に分岐「{branch}」がありません",
+  "check.flow.ts-branch-mismatch": "トラブルシューティング「{symptom}」は {goto} へ案内していますが、分岐「{branch}」の行き先は {flow} です",
+  "check.flow.ts-text-mismatch": "トラブルシューティング「{symptom}」の対処文は {ref} を案内していますが、goto は {goto} です",
+  "check.flow.ts-no-goto": "トラブルシューティング「{symptom}」の対処文は {ref} を案内していますが、goto がありません"
 }

@@ -1,6 +1,6 @@
 import { buildGraph, cannotFinish, danglingEdges, reachable, simulate, unmarkedCycles, unmetRequires, type Step } from "../../flow";
 import { m } from "../../messages";
-import type { Doc } from "../../types";
+import type { Doc, Finding } from "../../types";
 import { defineCheck } from "../define";
 
 const steps = (doc: Doc): Step[] => doc.data.steps ?? [];
@@ -181,4 +181,37 @@ export const flowCoverage = defineCheck({
   },
 });
 
-export const flowChecks = [flowRefs, flowReachable, flowTerminates, flowLoop, flowState, flowOrphanRequires, flowDeclarations, flowScenario, flowCoverage];
+/**
+ * トラブルシューティングとフローの突き合わせ:
+ * - step / goto が存在する、branch はその手順の分岐にある
+ * - branch の行き先と goto が一致する
+ * - 対処の文が参照する手順（{{ref:…}}）が goto と一致する。手順を参照しているのに goto が無ければ警告
+ */
+export const flowTroubleshooting = defineCheck({
+  id: "flow/troubleshooting",
+  axis: "logic",
+  scope: "item",
+  kinds: ["procedure"],
+  severity: "error",
+  run(doc, ctx) {
+    const ss = steps(doc);
+    const byId = new Map(ss.map((s) => [s.id, s]));
+    const out: Finding[] = [];
+    ((doc.data.troubleshooting ?? []) as any[]).forEach((t, i) => {
+      const where = { line: doc.lineOf(`/troubleshooting/${i}`) };
+      const fail = (id: string, vars: Record<string, unknown> = {}) => out.push(ctx.fail(m(`check.flow.ts-${id}`, { symptom: t.symptom, ...vars }), where));
+      for (const k of ["step", "goto"]) if (t[k] && !byId.has(t[k])) fail("unknown-step", { id: t[k] });
+      const refs = [...String(t.action).matchAll(/\{\{\s*ref:([^}\s]+)\s*\}\}/g)].map((x) => x[1]).filter((id) => byId.has(id));
+      if (t.branch) {
+        const b = (byId.get(t.step)?.branches ?? []).find((x) => x.if === t.branch);
+        if (!b) fail("unknown-branch", { step: label(doc, t.step ?? "?"), branch: t.branch });
+        else if (t.goto && b.goto !== t.goto) fail("branch-mismatch", { branch: t.branch, flow: label(doc, b.goto), goto: label(doc, t.goto) });
+      }
+      if (t.goto) for (const r of refs) if (r !== t.goto) fail("text-mismatch", { ref: label(doc, r), goto: label(doc, t.goto) });
+      if (!t.goto && refs.length) fail("no-goto", { ref: label(doc, refs[0]) });
+    });
+    return out;
+  },
+});
+
+export const flowChecks = [flowRefs, flowReachable, flowTerminates, flowLoop, flowState, flowOrphanRequires, flowDeclarations, flowScenario, flowCoverage, flowTroubleshooting];

@@ -111,3 +111,22 @@ test("flow/declarations: 補助手順への分岐は飛ばしとみなさない"
   // verify → resend（末尾の補助手順）は、並び順では plan・invite を越えるが飛ばしではない
   expect(await messages(flowDeclarations, proc(signup()))).toEqual([]);
 });
+
+test("flow/troubleshooting: 分岐・対処文と行き先を突き合わせる", async () => {
+  const { flowTroubleshooting } = await import("../src/checks/builtin/flow");
+  const ts = (entries: string) => proc(signup(), `troubleshooting:\n${entries}`);
+  const ok = ts("  - { symptom: 届かない, step: verify, branch: 届かない, goto: resend, action: \"{{ref:resend}}で再送する。\" }\n");
+  expect(await messages(flowTroubleshooting, ok)).toEqual([]);
+  const bad = ts(
+    "  - { symptom: 届かない, step: verify, branch: 届かない, goto: signup, action: \"{{ref:signup}}からやり直す。\" }\n" +
+      "  - { symptom: 別件, step: verify, branch: 無い分岐, action: 確認する。 }\n" +
+      "  - { symptom: 文と違う, goto: resend, action: \"{{ref:signup}}からやり直す。\" }\n" +
+      "  - { symptom: 行き先なし, action: \"{{ref:plan}}へ戻る。\" }\n",
+  );
+  expect(await messages(flowTroubleshooting, bad)).toEqual([
+    "トラブルシューティング「届かない」は 手順1 へ案内していますが、分岐「届かない」の行き先は 手順5 です",
+    "トラブルシューティング「別件」: 手順2 に分岐「無い分岐」がありません",
+    "トラブルシューティング「文と違う」の対処文は 手順1 を案内していますが、goto は 手順5 です",
+    "トラブルシューティング「行き先なし」の対処文は 手順3 を案内していますが、goto がありません",
+  ]);
+});

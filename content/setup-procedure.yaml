@@ -60,8 +60,12 @@ flows:
     expect_end: invite
 troubleshooting:
   - symptom: 確認メールが届かない
+    step: verify
+    branch: 10 分以上たっても確認メールが届かない
+    goto: resend
     action: 迷惑メールフォルダを確認する。10 分以上届かない場合は{{ref:resend}}で再送する。
   - symptom: CSV のアップロードに失敗する
+    step: invite
     action: 文字コードが UTF-8 か確認する。列の形式は[CSV テンプレート](./templates/members.csv)を参照する。
 figures:
   - id: flow

@@ -615,3 +615,16 @@ Vite の manifest と同様に、出力ファイル（dist からの相対パス
 - レイアウトの `box.fill` はトークン名のみ。
 - theme/valid はパレットも検査し、theme/contrast はパレットごとに text / primary / muted と background の比を見る。
 - manifest の入力に role `palette` を追加。同梱: default / dark-green / sakura / midnight。同梱テーマ midnight とレイアウト modern を追加。
+
+---
+
+## 追補 G: フローの論理チェックの仕組み化（2026-09-29）
+
+- シナリオ（flows）は到達先に加え、たどった経路の上で requires が満たされているかを検査する。`choose` は文字列なら最初の訪問のみ、配列なら訪問ごと（null で既定の次）。
+- 分岐のある手順は「それ以外は〜へ」と既定の行き先も出力する。
+- 追加チェック:
+  - `flow/orphan-requires`（error）: requires にあるのに produces / initial_state のどこにも無い状態。
+  - `flow/declarations`（warn）: 分岐が既定の道筋の先へ飛ぶとき、飛ばされる手順に produces が無い（飛ばしてよいか検証できない）。
+  - `flow/coverage`（warn）: どのシナリオでも通らない分岐・終端、分岐があるのにシナリオが無い。
+  - `flow/troubleshooting`（error）: トラブルシューティングの `step` / `branch` / `goto` を分岐と突き合わせる。branch の行き先と goto の不一致、対処文の {{ref}} と goto の不一致、手順を参照しているのに goto が無い。
+- 地の文の意味の矛盾そのものは判定しない。行き先を構造（goto・branch）として書かせ、構造同士を突き合わせる。
